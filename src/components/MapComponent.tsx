@@ -45,7 +45,7 @@ export default function MapComponent({ gpxData }: MapComponentProps) {
       />
       {coordinates.length > 0 && (
         <>
-          <Polyline positions={coordinates} color="blue" weight={4} />
+          <Polyline positions={coordinates} color="#38824f" weight={4} />
           <FitBounds coordinates={coordinates} />
         </>
       )}

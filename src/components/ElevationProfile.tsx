@@ -76,8 +76,8 @@ export default function ElevationProfile({ gpxPath }: ElevationProfileProps) {
 
   if (!isClient || !elevationData || elevationData.length === 0) {
     return (
-      <div className="w-full h-64 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded">
-        <p className="text-gray-500">
+      <div className="w-full h-64 flex items-center justify-center bg-sand-100 dark:bg-earth-800 rounded">
+        <p className="text-sand-500">
           {!isClient || !gpxData ? 'Loading elevation data...' : 'No elevation data available'}
         </p>
       </div>
@@ -127,7 +127,7 @@ export default function ElevationProfile({ gpxPath }: ElevationProfileProps) {
   })
 
   return (
-    <div className="w-full bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
+    <div className="w-full bg-sand-50 dark:bg-earth-800 rounded-lg shadow-md p-4">
       <svg
         viewBox={`0 0 ${width} ${height}`}
         className="w-full h-auto"
@@ -135,8 +135,8 @@ export default function ElevationProfile({ gpxPath }: ElevationProfileProps) {
       >
         <defs>
           <linearGradient id="elevationGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.5" />
-            <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.1" />
+            <stop offset="0%" stopColor="#38824f" stopOpacity="0.5" />
+            <stop offset="100%" stopColor="#38824f" stopOpacity="0.1" />
           </linearGradient>
         </defs>
 
@@ -148,15 +148,15 @@ export default function ElevationProfile({ gpxPath }: ElevationProfileProps) {
               y1={line.y}
               x2={padding.left + chartWidth}
               y2={line.y}
-              stroke="#e5e7eb"
+              stroke="#e3dbd0"
               strokeWidth="1"
-              className="dark:stroke-gray-700"
+              className="dark:stroke-earth-700"
             />
             <text
               x={padding.left - 10}
               y={line.y + 4}
               textAnchor="end"
-              className="text-xs fill-gray-600 dark:fill-gray-400"
+              className="text-xs fill-sand-600 dark:fill-sand-400"
             >
               {Math.round(line.elevation)}m / {Math.round(line.elevation * 3.28084)}ft
             </text>
@@ -170,15 +170,15 @@ export default function ElevationProfile({ gpxPath }: ElevationProfileProps) {
               y1={padding.top}
               x2={line.x}
               y2={padding.top + chartHeight}
-              stroke="#e5e7eb"
+              stroke="#e3dbd0"
               strokeWidth="1"
-              className="dark:stroke-gray-700"
+              className="dark:stroke-earth-700"
             />
             <text
               x={line.x}
               y={padding.top + chartHeight + 20}
               textAnchor="middle"
-              className="text-xs fill-gray-600 dark:fill-gray-400"
+              className="text-xs fill-sand-600 dark:fill-sand-400"
             >
               {line.distance.toFixed(1)}km / {(line.distance * 0.621371).toFixed(1)}mi
             </text>
@@ -195,7 +195,7 @@ export default function ElevationProfile({ gpxPath }: ElevationProfileProps) {
         <path
           d={pathData}
           fill="none"
-          stroke="#3b82f6"
+          stroke="#38824f"
           strokeWidth="2"
         />
 
@@ -204,7 +204,7 @@ export default function ElevationProfile({ gpxPath }: ElevationProfileProps) {
           x={padding.left + chartWidth / 2}
           y={height - 5}
           textAnchor="middle"
-          className="text-sm fill-gray-700 dark:fill-gray-300 font-medium"
+          className="text-sm fill-earth-700 dark:fill-sand-300 font-medium"
         >
           Distance
         </text>
@@ -213,7 +213,7 @@ export default function ElevationProfile({ gpxPath }: ElevationProfileProps) {
           y={padding.top + chartHeight / 2}
           textAnchor="middle"
           transform={`rotate(-90, 15, ${padding.top + chartHeight / 2})`}
-          className="text-sm fill-gray-700 dark:fill-gray-300 font-medium"
+          className="text-sm fill-earth-700 dark:fill-sand-300 font-medium"
         >
           Elevation
         </text>
