@@ -1,5 +1,6 @@
 package com.alnorth.india2026
 
+import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -8,7 +9,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -16,6 +17,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.alnorth.india2026.model.SubmissionResult
+import com.alnorth.india2026.ui.screens.CrashScreen
 import com.alnorth.india2026.ui.screens.DayListScreen
 import com.alnorth.india2026.ui.screens.EditDayScreen
 import com.alnorth.india2026.ui.screens.ResultScreen
@@ -24,6 +26,9 @@ import com.alnorth.india2026.ui.theme.India2026Theme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Install custom crash handler
+        Thread.setDefaultUncaughtExceptionHandler(CrashHandler(applicationContext))
 
         try {
             // Log token status for debugging
@@ -40,10 +45,29 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    India2026App()
+                    MainContent()
                 }
             }
         }
+    }
+}
+
+@Composable
+fun MainContent() {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val prefs = remember { context.getSharedPreferences("crash_data", Context.MODE_PRIVATE) }
+    var crashMessage by remember { mutableStateOf(prefs.getString("crash_message", null)) }
+
+    if (crashMessage != null) {
+        CrashScreen(
+            crashMessage = crashMessage!!,
+            onDismiss = {
+                prefs.edit().clear().apply()
+                crashMessage = null
+            }
+        )
+    } else {
+        India2026App()
     }
 }
 
