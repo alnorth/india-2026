@@ -1,0 +1,12 @@
+---
+date: 2026-01-26
+title: "Day 7: Thenni"
+distance:
+location: "Tamil Nadu"
+status: planned
+stravaId: ""
+---
+
+## Route
+
+Coast to Coast Day 7: Thenni.
