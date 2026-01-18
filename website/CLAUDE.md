@@ -139,24 +139,31 @@ india-2026/                       # Monorepo root
 
 #### `src/components/PhotoGalleryOptimized.astro`
 - **Type**: Astro Component (with embedded React component)
-- **Purpose**: Photo gallery with automatic image optimization
+- **Purpose**: Photo gallery with automatic image optimization and caption support
 - **Props**: `slug` (day slug to locate photos)
 - **Implementation**:
-  - Reads photos from `content/days/{slug}/photos/` directory at build time
+  - Reads photos from `content/days/{slug}/photos/` directory at build time (filesystem is source of truth)
+  - Fetches photo metadata (captions, alt text) from day frontmatter via `getDayBySlug()`
+  - Merges filesystem photos with optional caption data
   - Uses Sharp to generate optimized WebP versions:
     - 400x400px thumbnails for grid (80% quality)
     - Max 1920px full-size for lightbox (85% quality)
   - Saves optimized images to `dist/_images/{slug}/`
   - Renders responsive grid layout with Tailwind CSS
-  - Includes PhotoLightbox component for full-screen viewing
+  - Uses alt text (or caption as fallback) for accessibility
+  - Includes PhotoLightbox component for full-screen viewing with captions
 - **Why Astro Component**: Needs file system access at build time for image processing
+- **Caption Architecture**: Filesystem determines which photos exist; frontmatter optionally augments with captions
 
 #### `src/components/PhotoLightbox.tsx`
 - **Type**: React Client Component
-- **Purpose**: Full-screen lightbox modal for photo viewing
-- **Props**: `photos` (array of photo URLs)
+- **Purpose**: Full-screen lightbox modal for photo viewing with caption display
+- **Props**:
+  - `photos` (array of photo URLs)
+  - `captions` (optional array of caption strings)
 - **Implementation**:
   - Modal overlay with black background
+  - Displays caption below image (if provided)
   - Click to close, or use ESC key
   - Navigate with arrow keys or on-screen buttons
   - Listens for custom events to open specific photos
@@ -172,6 +179,12 @@ This module handles all content reading and parsing.
 #### Data Types
 
 ```typescript
+interface PhotoMetadata {
+  file: string           // filename of the photo
+  caption?: string       // optional caption text
+  alt?: string          // optional alt text for accessibility
+}
+
 interface DayMetadata {
   date: string           // YYYY-MM-DD format
   title: string          // e.g., "Day 1: Kanyakumari to Nagercoil"
@@ -179,6 +192,7 @@ interface DayMetadata {
   location?: string      // e.g., "Tamil Nadu"
   status: 'planned' | 'in-progress' | 'completed'
   stravaId?: string      // Strava activity ID
+  photos?: PhotoMetadata[] // optional photo metadata (captions, alt text)
 }
 
 interface Day extends DayMetadata {
@@ -186,6 +200,7 @@ interface Day extends DayMetadata {
   content: string        // HTML (converted from markdown)
   gpxPath?: string       // path to GPX file if exists
   photos?: string[]      // array of photo URLs if exist
+  photoMetadata?: Map<string, PhotoMetadata> // map of filename to metadata
 }
 ```
 
@@ -205,6 +220,7 @@ interface Day extends DayMetadata {
 - Converts markdown to HTML with `marked`
 - Checks for GPX file existence
 - Scans photos directory for images
+- Creates photoMetadata Map from frontmatter photos array (for fast lookups)
 - Returns complete Day object
 
 **`getAllSlugs(): string[]`**
@@ -223,8 +239,23 @@ distance: 45
 location: "Kanyakumari, Tamil Nadu"
 status: planned
 stravaId: ""
+photos:
+  - file: sunrise-beach.jpg
+    caption: "Golden sunrise at Alamparai Fort ruins"
+    alt: "Orange sunrise over ancient fort ruins on the beach"
+  - file: coastal-road.jpg
+    caption: "Cycling along the East Coast Road"
 ---
 ```
+
+**Photo Metadata (Optional)**:
+- The `photos` array is optional and used to add captions/alt text to photos
+- The `file` field must match the actual filename in the `photos/` directory
+- The filesystem is the source of truth - all photos in the directory will be displayed
+- Photos without metadata entries display normally (no caption)
+- Photos with metadata in frontmatter but no file on disk are ignored
+- `caption` is displayed below the image in the lightbox
+- `alt` is used for accessibility (falls back to caption if not provided)
 
 ### Markdown Content
 
@@ -466,6 +497,24 @@ npm run preview
 2. For global changes, edit `src/styles/globals.css`
 3. For theme colors, edit `tailwind.config.js`
 
+### Updating Documentation
+
+**IMPORTANT**: When making changes to the codebase, always update both documentation files:
+
+1. **CLAUDE.md** (this file) - Technical documentation
+   - Update component descriptions
+   - Document new interfaces/types
+   - Add to "Recent Additions" section
+   - Update architecture diagrams if needed
+
+2. **README.md** - User guide
+   - Update examples if user-facing changes
+   - Add new frontmatter fields to examples
+   - Update usage instructions
+   - Keep file paths current
+
+Both files should stay in sync with the actual codebase. Out-of-date documentation can be more harmful than no documentation.
+
 ## Troubleshooting
 
 ### Map Not Showing
@@ -519,16 +568,19 @@ This project was migrated from Next.js to Astro for better Amplify compatibility
 
 Potential improvements to consider:
 
-1. **Image optimization** - Use Astro Image component
-2. **GPX elevation profiles** - Parse and display elevation data
-3. **Route statistics** - Calculate distance, elevation gain from GPX
-4. **Map clustering** - Show all days on a single overview map
-5. **RSS feed** - Generate feed of daily updates
-6. **Search** - Filter days by location, distance, date
-7. **Social sharing** - Meta tags for better social previews
-8. **Comments** - Integration with commenting system
-9. **Analytics** - Track visitor engagement
-10. **PWA** - Make site installable/offline-capable
+1. **GPX elevation profiles** - Parse and display elevation data
+2. **Route statistics** - Calculate distance, elevation gain from GPX
+3. **Map clustering** - Show all days on a single overview map
+4. **RSS feed** - Generate feed of daily updates
+5. **Search** - Filter days by location, distance, date
+6. **Social sharing** - Meta tags for better social previews
+7. **Comments** - Integration with commenting system
+8. **Analytics** - Track visitor engagement
+9. **PWA** - Make site installable/offline-capable
+
+## Recent Additions
+
+- **Photo captions** (2026-01-18) - Add optional captions and alt text to photos via frontmatter
 
 ## Related Documentation
 

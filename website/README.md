@@ -10,45 +10,52 @@ A static website to track my coast to coast cycle tour across southern India, bu
 ## Project Structure
 
 ```
-india-2026/
-├── src/                          # Astro source files
-│   ├── pages/                    # Astro pages (routes)
-│   │   ├── index.astro           # Home page (listing all days)
-│   │   └── day/
-│   │       └── [slug].astro      # Dynamic route for individual day pages
-│   ├── layouts/                  # Page layouts
-│   │   └── BaseLayout.astro      # Root layout (wrapper for all pages)
-│   ├── components/               # React components (interactive)
-│   │   ├── GPXMap.tsx            # GPX route visualization
-│   │   ├── MapComponent.tsx      # Leaflet map wrapper
-│   │   ├── PhotoGallery.tsx      # Photo grid and lightbox
-│   │   └── StravaEmbed.tsx       # Strava activity embed
-│   ├── lib/                      # Utility functions
-│   │   └── days.ts               # Functions to read/parse day content
-│   └── styles/                   # Global styles
-│       └── globals.css           # Tailwind directives and global CSS
-├── content/                      # Content files (not in public/)
-│   └── days/                     # Daily ride content
-│       └── [day-name]/           # Each day has its own folder
-│           ├── index.md          # Day metadata and writeup
-│           ├── route.gpx         # Planned route (GPX file)
-│           └── photos/           # Photos from the day
-├── public/                       # Static files served as-is
-├── amplify.yml                   # AWS Amplify build configuration
-├── astro.config.mjs              # Astro configuration
-├── package.json                  # Dependencies
-├── tailwind.config.js            # Tailwind CSS configuration
-└── tsconfig.json                 # TypeScript configuration
+india-2026/                       # Monorepo root
+├── website/                      # Website project
+│   ├── src/                      # Astro source files
+│   │   ├── pages/                # Astro pages (routes)
+│   │   │   ├── index.astro       # Home page (listing all days)
+│   │   │   └── day/
+│   │   │       └── [slug].astro  # Dynamic route for individual day pages
+│   │   ├── layouts/              # Page layouts
+│   │   │   └── BaseLayout.astro  # Root layout (wrapper for all pages)
+│   │   ├── components/           # React & Astro components
+│   │   │   ├── GPXMap.tsx        # GPX route visualization
+│   │   │   ├── MapComponent.tsx  # Leaflet map wrapper
+│   │   │   ├── PhotoGalleryOptimized.astro  # Photo gallery with optimization
+│   │   │   ├── PhotoLightbox.tsx # Photo lightbox with captions
+│   │   │   └── StravaEmbed.tsx   # Strava activity embed
+│   │   ├── lib/                  # Utility functions
+│   │   │   └── days.ts           # Functions to read/parse day content
+│   │   └── styles/               # Global styles
+│   │       └── globals.css       # Tailwind directives and global CSS
+│   ├── content/                  # Content files (not in public/)
+│   │   └── days/                 # Daily ride content
+│   │       └── [day-name]/       # Each day has its own folder
+│   │           ├── index.md      # Day metadata and writeup
+│   │           ├── route.gpx     # Planned route (GPX file)
+│   │           └── photos/       # Photos from the day
+│   ├── public/                   # Static files served as-is
+│   ├── astro.config.mjs          # Astro configuration
+│   ├── package.json              # Dependencies
+│   ├── tailwind.config.js        # Tailwind CSS configuration
+│   ├── tsconfig.json             # TypeScript configuration
+│   ├── CLAUDE.md                 # Technical documentation
+│   └── README.md                 # This file - user guide
+├── amplify.yml                   # AWS Amplify build configuration (at root)
+└── README.md                     # Monorepo overview
 ```
+
+**Note**: This is a monorepo structure. All website files are in the `website/` subdirectory. The root level is prepared for future addition of an Android app.
 
 ## Content File Structure
 
 ### Directory Structure for Each Day
 
-Each day of your tour should have its own directory under `content/days/`. The directory name becomes the URL slug for that day.
+Each day of your tour should have its own directory under `website/content/days/`. The directory name becomes the URL slug for that day.
 
 ```
-content/days/day-01-kanyakumari-to-nagercoil/
+website/content/days/day-01-kanyakumari-to-nagercoil/
 ├── index.md              # Required: Day metadata and writeup
 ├── route.gpx             # Required initially: Planned route
 └── photos/               # Optional: Photos from the day
@@ -69,6 +76,12 @@ distance: 45
 location: "Kanyakumari, Tamil Nadu"
 status: planned
 stravaId: ""
+photos:
+  - file: sunrise-beach.jpg
+    caption: "Golden sunrise at the southernmost point of India"
+    alt: "Orange and pink sunrise over the Indian Ocean"
+  - file: lunch-stop.jpg
+    caption: "Traditional Tamil lunch at a local restaurant"
 ---
 
 Your writeup about the day goes here. Before the ride, this might just be a brief description of the planned route. After the ride, you can add:
@@ -91,6 +104,10 @@ Your writeup about the day goes here. Before the ride, this might just be a brie
   - `in-progress` - Currently riding this day
   - `completed` - Ride completed
 - **stravaId** (optional): Strava activity ID (just the number from the URL)
+- **photos** (optional): Array of photo metadata for adding captions/alt text
+  - **file** (required): Filename of the photo (must exist in photos/ directory)
+  - **caption** (optional): Caption text displayed below photo in lightbox
+  - **alt** (optional): Alt text for accessibility (falls back to caption if not provided)
 
 ### GPX Files
 
@@ -113,6 +130,30 @@ Add photos to the `photos/` directory within each day's folder. Supported format
 
 Photos will automatically appear in a gallery at the bottom of each day's page.
 
+#### Photo Optimization
+
+Photos are automatically optimized at build time:
+- Original photos can be any size (e.g., large phone photos)
+- Thumbnails (400x400px) are generated for the gallery grid
+- Full-size optimized versions (max 1920px) are used in the lightbox
+- All optimized images are converted to WebP format
+- Typical file size reduction: 70-90%
+
+#### Adding Captions
+
+To add captions to photos, include a `photos` array in your frontmatter:
+
+```yaml
+photos:
+  - file: sunrise-beach.jpg
+    caption: "Golden sunrise at the southernmost point of India"
+    alt: "Orange and pink sunrise over the Indian Ocean"
+  - file: lunch-stop.jpg
+    caption: "Traditional Tamil lunch at a local restaurant"
+```
+
+**Important**: The filesystem is the source of truth. All photos in the `photos/` directory will be displayed, whether or not they have metadata in the frontmatter. The `photos` array is optional and only used to add captions/alt text.
+
 ### Strava Integration
 
 After completing a ride:
@@ -122,25 +163,25 @@ After completing a ride:
 3. Copy the activity ID from the embed code
 4. Update your day's `index.md` frontmatter with the `stravaId`
 
-Note: You'll need to update `src/components/StravaEmbed.tsx` to include your embed token. Get this from the Strava embed code.
+Note: You'll need to update `website/src/components/StravaEmbed.tsx` to include your embed token. Get this from the Strava embed code.
 
 ## Adding a New Day
 
 ### Before the Ride
 
-1. Create a new directory in `content/days/` with a descriptive name:
+1. Create a new directory in `website/content/days/` with a descriptive name:
    ```bash
-   mkdir -p content/days/day-02-nagercoil-to-trivandrum/photos
+   mkdir -p website/content/days/day-02-nagercoil-to-trivandrum/photos
    ```
 
 2. Add your GPX route file:
    ```bash
-   cp ~/Downloads/day-02-route.gpx content/days/day-02-nagercoil-to-trivandrum/route.gpx
+   cp ~/Downloads/day-02-route.gpx website/content/days/day-02-nagercoil-to-trivandrum/route.gpx
    ```
 
 3. Create the `index.md` file with frontmatter:
    ```bash
-   cat > content/days/day-02-nagercoil-to-trivandrum/index.md << 'EOF'
+   cat > website/content/days/day-02-nagercoil-to-trivandrum/index.md << 'EOF'
    ---
    date: 2026-01-21
    title: "Day 2: Nagercoil to Trivandrum"
@@ -162,7 +203,8 @@ Note: You'll need to update `src/components/StravaEmbed.tsx` to include your emb
 2. Add your Strava activity ID to the frontmatter
 3. Write about your experience in the markdown content
 4. Add photos to the `photos/` directory
-5. Commit and push
+5. Optionally add captions to photos via the `photos` array in frontmatter
+6. Commit and push
 
 ## Local Development
 
@@ -178,25 +220,31 @@ Note: You'll need to update `src/components/StravaEmbed.tsx` to include your emb
    cd india-2026
    ```
 
-2. Install dependencies:
+2. Navigate to the website directory:
+   ```bash
+   cd website
+   ```
+
+3. Install dependencies:
    ```bash
    npm install
    ```
 
-3. Run the development server:
+4. Run the development server:
    ```bash
    npm run dev
    ```
 
-4. Open [http://localhost:4321](http://localhost:4321) in your browser
+5. Open [http://localhost:4321](http://localhost:4321) in your browser
 
 ### Building for Production
 
 ```bash
+cd website
 npm run build
 ```
 
-This generates a static export in the `dist/` directory.
+This generates a static export in the `website/dist/` directory.
 
 ## AWS Amplify Setup
 
@@ -266,10 +314,11 @@ If you're offline:
 
 ### Photo Optimization
 
-Consider optimizing photos before uploading to keep the site fast:
+Photos are automatically optimized during the build process, so you can upload full-resolution photos directly. The build system will generate optimized versions. However, if you want to reduce upload times or storage, you can pre-optimize:
+
 ```bash
-# Using ImageMagick to resize
-mogrify -resize 1920x1920\> -quality 85 content/days/day-*/photos/*.jpg
+# Using ImageMagick to resize before uploading
+mogrify -resize 1920x1920\> -quality 85 website/content/days/day-*/photos/*.jpg
 ```
 
 ## Support
