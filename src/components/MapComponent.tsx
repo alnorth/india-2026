@@ -1,5 +1,3 @@
-'use client'
-
 import { MapContainer, TileLayer, Polyline, useMap } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useEffect, useMemo } from 'react'
