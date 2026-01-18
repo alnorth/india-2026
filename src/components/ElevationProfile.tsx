@@ -86,7 +86,7 @@ export default function ElevationProfile({ gpxPath }: ElevationProfileProps) {
 
   const width = 800
   const height = 300
-  const padding = { top: 20, right: 40, bottom: 40, left: 60 }
+  const padding = { top: 20, right: 40, bottom: 40, left: 90 }
   const chartWidth = width - padding.left - padding.right
   const chartHeight = height - padding.top - padding.bottom
 
@@ -209,10 +209,10 @@ export default function ElevationProfile({ gpxPath }: ElevationProfileProps) {
           Distance
         </text>
         <text
-          x={15}
+          x={20}
           y={padding.top + chartHeight / 2}
           textAnchor="middle"
-          transform={`rotate(-90, 15, ${padding.top + chartHeight / 2})`}
+          transform={`rotate(-90, 20, ${padding.top + chartHeight / 2})`}
           className="text-sm fill-earth-700 dark:fill-sand-300 font-medium"
         >
           Elevation
