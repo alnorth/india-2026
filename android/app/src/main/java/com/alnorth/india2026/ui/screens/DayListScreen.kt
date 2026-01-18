@@ -185,23 +185,39 @@ fun StatusBadge(status: String) {
 }
 
 class DayListViewModel : ViewModel() {
-    private val repository = ApiClient.repository
-
     private val _uiState = MutableStateFlow<DayListUiState>(DayListUiState.Loading)
     val uiState: StateFlow<DayListUiState> = _uiState.asStateFlow()
 
     fun loadDays() {
         viewModelScope.launch {
             _uiState.value = DayListUiState.Loading
-            repository.getAllDays()
-                .onSuccess { days ->
-                    _uiState.value = DayListUiState.Success(days)
-                }
-                .onFailure { e ->
+
+            try {
+                // Check if token is configured
+                if (com.alnorth.india2026.BuildConfig.GITHUB_TOKEN.isEmpty()) {
                     _uiState.value = DayListUiState.Error(
-                        e.message ?: "Failed to load days. Check your internet connection."
+                        "GitHub token not configured. Please check the app setup."
                     )
+                    return@launch
                 }
+
+                // Access repository only after token check
+                val repository = ApiClient.repository
+
+                repository.getAllDays()
+                    .onSuccess { days ->
+                        _uiState.value = DayListUiState.Success(days)
+                    }
+                    .onFailure { e ->
+                        _uiState.value = DayListUiState.Error(
+                            e.message ?: "Failed to load days. Check your internet connection."
+                        )
+                    }
+            } catch (e: Exception) {
+                _uiState.value = DayListUiState.Error(
+                    "Error: ${e.message ?: "Unknown error occurred"}"
+                )
+            }
         }
     }
 }

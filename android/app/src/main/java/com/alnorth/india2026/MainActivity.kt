@@ -30,14 +30,6 @@ class MainActivity : ComponentActivity() {
         // Install custom crash handler
         Thread.setDefaultUncaughtExceptionHandler(CrashHandler(applicationContext))
 
-        try {
-            // Log token status for debugging
-            Log.d("India2026", "GitHub token length: ${BuildConfig.GITHUB_TOKEN.length}")
-            Log.d("India2026", "Token empty: ${BuildConfig.GITHUB_TOKEN.isEmpty()}")
-        } catch (e: Exception) {
-            Log.e("India2026", "Error checking token", e)
-        }
-
         enableEdgeToEdge()
         setContent {
             India2026Theme {

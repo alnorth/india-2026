@@ -264,8 +264,6 @@ fun StatusDropdown(
 }
 
 class EditDayViewModel : ViewModel() {
-    private val repository = ApiClient.repository
-
     private val _uiState = MutableStateFlow<EditDayUiState>(EditDayUiState.Loading)
     val uiState: StateFlow<EditDayUiState> = _uiState.asStateFlow()
 
@@ -274,23 +272,41 @@ class EditDayViewModel : ViewModel() {
     fun loadDay(slug: String) {
         viewModelScope.launch {
             _uiState.value = EditDayUiState.Loading
-            repository.getDayBySlug(slug)
-                .onSuccess { entry ->
-                    originalEntry = entry
-                    _uiState.value = EditDayUiState.Editing(
-                        dayEntry = entry,
-                        status = entry.status,
-                        stravaId = entry.stravaId ?: "",
-                        content = entry.content,
-                        newPhotos = emptyList(),
-                        hasChanges = false
-                    )
-                }
-                .onFailure { e ->
+
+            try {
+                // Check if token is configured
+                if (com.alnorth.india2026.BuildConfig.GITHUB_TOKEN.isEmpty()) {
                     _uiState.value = EditDayUiState.Error(
-                        e.message ?: "Failed to load day entry"
+                        "GitHub token not configured. Please check the app setup."
                     )
+                    return@launch
                 }
+
+                // Access repository only after token check
+                val repository = ApiClient.repository
+
+                repository.getDayBySlug(slug)
+                    .onSuccess { entry ->
+                        originalEntry = entry
+                        _uiState.value = EditDayUiState.Editing(
+                            dayEntry = entry,
+                            status = entry.status,
+                            stravaId = entry.stravaId ?: "",
+                            content = entry.content,
+                            newPhotos = emptyList(),
+                            hasChanges = false
+                        )
+                    }
+                    .onFailure { e ->
+                        _uiState.value = EditDayUiState.Error(
+                            e.message ?: "Failed to load day entry"
+                        )
+                    }
+            } catch (e: Exception) {
+                _uiState.value = EditDayUiState.Error(
+                    "Error: ${e.message ?: "Unknown error occurred"}"
+                )
+            }
         }
     }
 
@@ -329,25 +345,33 @@ class EditDayViewModel : ViewModel() {
         if (current !is EditDayUiState.Editing) return
 
         viewModelScope.launch {
-            _uiState.value = EditDayUiState.Submitting("Creating branch...")
+            try {
+                _uiState.value = EditDayUiState.Submitting("Creating branch...")
 
-            val updatedEntry = current.dayEntry.copy(
-                status = current.status,
-                stravaId = current.stravaId.ifEmpty { null },
-                content = current.content
-            )
+                val updatedEntry = current.dayEntry.copy(
+                    status = current.status,
+                    stravaId = current.stravaId.ifEmpty { null },
+                    content = current.content
+                )
 
-            _uiState.value = EditDayUiState.Submitting("Uploading photos...")
+                _uiState.value = EditDayUiState.Submitting("Uploading photos...")
 
-            repository.updateDayEntry(updatedEntry, current.newPhotos, context)
-                .onSuccess { result ->
-                    _uiState.value = EditDayUiState.Success(result)
-                }
-                .onFailure { e ->
-                    _uiState.value = EditDayUiState.Error(
-                        e.message ?: "Failed to create pull request"
-                    )
-                }
+                val repository = ApiClient.repository
+
+                repository.updateDayEntry(updatedEntry, current.newPhotos, context)
+                    .onSuccess { result ->
+                        _uiState.value = EditDayUiState.Success(result)
+                    }
+                    .onFailure { e ->
+                        _uiState.value = EditDayUiState.Error(
+                            e.message ?: "Failed to create pull request"
+                        )
+                    }
+            } catch (e: Exception) {
+                _uiState.value = EditDayUiState.Error(
+                    "Error: ${e.message ?: "Unknown error occurred"}"
+                )
+            }
         }
     }
 }
