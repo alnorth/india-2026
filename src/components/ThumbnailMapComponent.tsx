@@ -4,7 +4,7 @@ import { useEffect, useMemo } from 'react'
 import type { LatLngTuple } from 'leaflet'
 import { parseGPX, trackPointsToCoordinates } from '@/lib/gpxUtils'
 
-interface MapComponentProps {
+interface ThumbnailMapComponentProps {
   gpxData: string
 }
 
@@ -17,14 +17,14 @@ function FitBounds({ coordinates }: { coordinates: LatLngTuple[] }) {
         (bounds, coord) => bounds.extend(coord),
         new (window as any).L.LatLngBounds(coordinates[0], coordinates[0])
       )
-      map.fitBounds(bounds, { padding: [50, 50] })
+      map.fitBounds(bounds, { padding: [20, 20] })
     }
   }, [coordinates, map])
 
   return null
 }
 
-export default function MapComponent({ gpxData }: MapComponentProps) {
+export default function ThumbnailMapComponent({ gpxData }: ThumbnailMapComponentProps) {
   const trackPoints = useMemo(() => parseGPX(gpxData), [gpxData])
   const coordinates = useMemo(() => trackPointsToCoordinates(trackPoints), [trackPoints])
 
@@ -37,15 +37,20 @@ export default function MapComponent({ gpxData }: MapComponentProps) {
       center={center}
       zoom={10}
       style={{ height: '100%', width: '100%' }}
-      className="z-0"
+      className="z-0 rounded"
+      zoomControl={false}
+      dragging={false}
+      scrollWheelZoom={false}
+      doubleClickZoom={false}
+      touchZoom={false}
+      attributionControl={false}
     >
       <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       {coordinates.length > 0 && (
         <>
-          <Polyline positions={coordinates} color="blue" weight={4} />
+          <Polyline positions={coordinates} color="#3b82f6" weight={3} />
           <FitBounds coordinates={coordinates} />
         </>
       )}
