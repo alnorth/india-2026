@@ -1,5 +1,5 @@
 ---
-date: 2026-01-27
+date: 2026-02-02
 title: "Day 8: Kumily"
 distance:
 location: "Kerala"

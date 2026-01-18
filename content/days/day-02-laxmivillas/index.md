@@ -1,5 +1,5 @@
 ---
-date: 2026-01-21
+date: 2026-01-27
 title: "Day 2: Laxmi Villas"
 distance:
 location: "Tamil Nadu"
