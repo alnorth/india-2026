@@ -158,7 +158,7 @@ export default function ElevationProfile({ gpxPath }: ElevationProfileProps) {
               textAnchor="end"
               className="text-xs fill-gray-600 dark:fill-gray-400"
             >
-              {Math.round(line.elevation)}m
+              {Math.round(line.elevation)}m / {Math.round(line.elevation * 3.28084)}ft
             </text>
           </g>
         ))}
@@ -180,7 +180,7 @@ export default function ElevationProfile({ gpxPath }: ElevationProfileProps) {
               textAnchor="middle"
               className="text-xs fill-gray-600 dark:fill-gray-400"
             >
-              {line.distance.toFixed(1)}km
+              {line.distance.toFixed(1)}km / {(line.distance * 0.621371).toFixed(1)}mi
             </text>
           </g>
         ))}

@@ -3,6 +3,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 import { getAllDays } from '@/lib/days';
 import { format } from 'date-fns';
 import RouteMapThumbnail from '@/components/RouteMapThumbnail';
+import { kmToMiles, metersToFeet } from '@/lib/unitConversions';
 
 const days = getAllDays();
 ---
@@ -60,17 +61,26 @@ const days = getAllDays();
                   <div class="font-semibold text-gray-900 dark:text-gray-100">
                     {day.gpxStats.distance} km
                   </div>
+                  <div class="text-xs text-gray-500 dark:text-gray-400">
+                    {kmToMiles(day.gpxStats.distance)} mi
+                  </div>
                 </div>
                 <div>
                   <div class="text-gray-500 dark:text-gray-400 text-xs">Elevation ↑</div>
                   <div class="font-semibold text-gray-900 dark:text-gray-100">
                     {day.gpxStats.elevationGain} m
                   </div>
+                  <div class="text-xs text-gray-500 dark:text-gray-400">
+                    {metersToFeet(day.gpxStats.elevationGain)} ft
+                  </div>
                 </div>
                 <div>
                   <div class="text-gray-500 dark:text-gray-400 text-xs">Elevation ↓</div>
                   <div class="font-semibold text-gray-900 dark:text-gray-100">
                     {day.gpxStats.elevationLoss} m
+                  </div>
+                  <div class="text-xs text-gray-500 dark:text-gray-400">
+                    {metersToFeet(day.gpxStats.elevationLoss)} ft
                   </div>
                 </div>
               </div>
