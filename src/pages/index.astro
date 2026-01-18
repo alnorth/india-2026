@@ -2,6 +2,7 @@
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import { getAllDays } from '@/lib/days';
 import { format } from 'date-fns';
+import RouteMapThumbnail from '@/components/RouteMapThumbnail';
 
 const days = getAllDays();
 ---
@@ -20,31 +21,61 @@ const days = getAllDays();
       {days.map((day) => (
         <a
           href={`/day/${day.slug}/`}
-          class="block p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow"
+          class="block bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden"
         >
-          <div class="flex justify-between items-start mb-2">
-            <h3 class="text-xl font-semibold">{day.title}</h3>
-            <span class={`px-2 py-1 text-xs rounded ${
-              day.status === 'completed' ? 'bg-green-100 text-green-800' :
-              day.status === 'in-progress' ? 'bg-yellow-100 text-yellow-800' :
-              'bg-gray-100 text-gray-800'
-            }`}>
-              {day.status}
-            </span>
+          {/* Route Thumbnail */}
+          {day.gpxPath && (
+            <div class="h-48 w-full">
+              <RouteMapThumbnail client:load gpxPath={day.gpxPath} />
+            </div>
+          )}
+
+          <div class="p-6">
+            <div class="flex justify-between items-start mb-2">
+              <h3 class="text-xl font-semibold">{day.title}</h3>
+              <span class={`px-2 py-1 text-xs rounded flex-shrink-0 ml-2 ${
+                day.status === 'completed' ? 'bg-green-100 text-green-800' :
+                day.status === 'in-progress' ? 'bg-yellow-100 text-yellow-800' :
+                'bg-gray-100 text-gray-800'
+              }`}>
+                {day.status}
+              </span>
+            </div>
+
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
+              {format(new Date(day.date), 'EEEE, MMMM d, yyyy')}
+            </p>
+
+            {day.location && (
+              <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                {day.location}
+              </p>
+            )}
+
+            {/* Stats from GPX */}
+            {day.gpxStats && (
+              <div class="grid grid-cols-3 gap-2 text-sm border-t pt-3 dark:border-gray-700">
+                <div>
+                  <div class="text-gray-500 dark:text-gray-400 text-xs">Distance</div>
+                  <div class="font-semibold text-gray-900 dark:text-gray-100">
+                    {day.gpxStats.distance} km
+                  </div>
+                </div>
+                <div>
+                  <div class="text-gray-500 dark:text-gray-400 text-xs">Elevation ↑</div>
+                  <div class="font-semibold text-gray-900 dark:text-gray-100">
+                    {day.gpxStats.elevationGain} m
+                  </div>
+                </div>
+                <div>
+                  <div class="text-gray-500 dark:text-gray-400 text-xs">Elevation ↓</div>
+                  <div class="font-semibold text-gray-900 dark:text-gray-100">
+                    {day.gpxStats.elevationLoss} m
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
-          <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">
-            {format(new Date(day.date), 'EEEE, MMMM d, yyyy')}
-          </p>
-          {day.distance && (
-            <p class="text-sm text-gray-600 dark:text-gray-400">
-              Distance: {day.distance} km
-            </p>
-          )}
-          {day.location && (
-            <p class="text-sm text-gray-600 dark:text-gray-400">
-              {day.location}
-            </p>
-          )}
         </a>
       ))}
     </div>

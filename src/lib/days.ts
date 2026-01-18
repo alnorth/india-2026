@@ -2,6 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import matter from 'gray-matter'
 import { marked } from 'marked'
+import { parseGPXServer, calculateGPXStats, type GPXStats } from './gpxServerUtils'
 
 const daysDirectory = path.join(process.cwd(), 'content/days')
 
@@ -19,6 +20,7 @@ export interface Day extends DayMetadata {
   content: string
   gpxPath?: string
   photos?: string[]
+  gpxStats?: GPXStats
 }
 
 export function getAllDays(): Day[] {
@@ -60,9 +62,20 @@ export function getDayBySlug(slug: string): Day | null {
 
   const htmlContent = marked(content)
 
-  // Check for GPX file
+  // Check for GPX file and parse stats
   const gpxPath = path.join(dayPath, 'route.gpx')
   const hasGpx = fs.existsSync(gpxPath)
+  let gpxStats: GPXStats | undefined
+
+  if (hasGpx) {
+    try {
+      const gpxContent = fs.readFileSync(gpxPath, 'utf8')
+      const trackPoints = parseGPXServer(gpxContent)
+      gpxStats = calculateGPXStats(trackPoints)
+    } catch (error) {
+      console.error(`Error parsing GPX for ${slug}:`, error)
+    }
+  }
 
   // Check for photos
   const photosPath = path.join(dayPath, 'photos')
@@ -80,6 +93,7 @@ export function getDayBySlug(slug: string): Day | null {
     content: htmlContent as string,
     gpxPath: hasGpx ? `/content/days/${slug}/route.gpx` : undefined,
     photos: photos.length > 0 ? photos : undefined,
+    gpxStats,
   }
 }
 
