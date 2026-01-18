@@ -1,6 +1,6 @@
 # India 2026 - Coast to Coast Cycle Tour
 
-A static website to track my coast to coast cycle tour across southern India, built with Next.js and hosted on AWS Amplify.
+A static website to track my coast to coast cycle tour across southern India, built with Astro and hosted on AWS Amplify.
 
 ## Live Site
 
@@ -11,31 +11,34 @@ A static website to track my coast to coast cycle tour across southern India, bu
 
 ```
 india-2026/
-├── app/                      # Next.js app directory
-│   ├── day/[slug]/          # Individual day pages
-│   │   └── page.tsx
-│   ├── globals.css          # Global styles
-│   ├── layout.tsx           # Root layout
-│   └── page.tsx             # Home page (listing all days)
-├── components/              # React components
-│   ├── GPXMap.tsx           # GPX route visualization
-│   ├── MapComponent.tsx     # Leaflet map wrapper
-│   ├── PhotoGallery.tsx     # Photo grid and lightbox
-│   └── StravaEmbed.tsx      # Strava activity embed
-├── content/                 # Content files
-│   └── days/                # Daily ride content
-│       └── [day-name]/      # Each day has its own folder
-│           ├── index.md     # Day metadata and writeup
-│           ├── route.gpx    # Planned route (GPX file)
-│           └── photos/      # Photos from the day
-├── lib/                     # Utility functions
-│   └── days.ts              # Functions to read day content
-├── public/                  # Static files
-├── amplify.yml              # AWS Amplify build configuration
-├── next.config.js           # Next.js configuration
-├── package.json             # Dependencies
-├── tailwind.config.js       # Tailwind CSS configuration
-└── tsconfig.json            # TypeScript configuration
+├── src/                          # Astro source files
+│   ├── pages/                    # Astro pages (routes)
+│   │   ├── index.astro           # Home page (listing all days)
+│   │   └── day/
+│   │       └── [slug].astro      # Dynamic route for individual day pages
+│   ├── layouts/                  # Page layouts
+│   │   └── BaseLayout.astro      # Root layout (wrapper for all pages)
+│   ├── components/               # React components (interactive)
+│   │   ├── GPXMap.tsx            # GPX route visualization
+│   │   ├── MapComponent.tsx      # Leaflet map wrapper
+│   │   ├── PhotoGallery.tsx      # Photo grid and lightbox
+│   │   └── StravaEmbed.tsx       # Strava activity embed
+│   ├── lib/                      # Utility functions
+│   │   └── days.ts               # Functions to read/parse day content
+│   └── styles/                   # Global styles
+│       └── globals.css           # Tailwind directives and global CSS
+├── content/                      # Content files (not in public/)
+│   └── days/                     # Daily ride content
+│       └── [day-name]/           # Each day has its own folder
+│           ├── index.md          # Day metadata and writeup
+│           ├── route.gpx         # Planned route (GPX file)
+│           └── photos/           # Photos from the day
+├── public/                       # Static files served as-is
+├── amplify.yml                   # AWS Amplify build configuration
+├── astro.config.mjs              # Astro configuration
+├── package.json                  # Dependencies
+├── tailwind.config.js            # Tailwind CSS configuration
+└── tsconfig.json                 # TypeScript configuration
 ```
 
 ## Content File Structure
@@ -119,7 +122,7 @@ After completing a ride:
 3. Copy the activity ID from the embed code
 4. Update your day's `index.md` frontmatter with the `stravaId`
 
-Note: You'll need to update `/components/StravaEmbed.tsx` to include your embed token. Get this from the Strava embed code.
+Note: You'll need to update `src/components/StravaEmbed.tsx` to include your embed token. Get this from the Strava embed code.
 
 ## Adding a New Day
 
@@ -185,7 +188,7 @@ Note: You'll need to update `/components/StravaEmbed.tsx` to include your embed 
    npm run dev
    ```
 
-4. Open [http://localhost:3000](http://localhost:3000) in your browser
+4. Open [http://localhost:4321](http://localhost:4321) in your browser
 
 ### Building for Production
 
@@ -193,7 +196,7 @@ Note: You'll need to update `/components/StravaEmbed.tsx` to include your embed 
 npm run build
 ```
 
-This generates a static export in the `out/` directory.
+This generates a static export in the `dist/` directory.
 
 ## AWS Amplify Setup
 
@@ -234,9 +237,10 @@ When you create a pull request:
 
 ## Technologies Used
 
-- **Next.js 14** - React framework with static site generation
+- **Astro** - Static site generator with React integration
 - **TypeScript** - Type-safe JavaScript
 - **Tailwind CSS** - Utility-first CSS framework
+- **React** - Interactive components (via Astro's React integration)
 - **Leaflet** - Interactive maps for GPX route visualization
 - **React Leaflet** - React wrapper for Leaflet
 - **Gray Matter** - Parse frontmatter from markdown files
