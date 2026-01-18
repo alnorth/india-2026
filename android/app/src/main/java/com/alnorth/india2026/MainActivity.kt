@@ -47,20 +47,24 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MainContent() {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val prefs = remember { context.getSharedPreferences("crash_data", Context.MODE_PRIVATE) }
-    var crashMessage by remember { mutableStateOf(prefs.getString("crash_message", null)) }
-
-    if (crashMessage != null) {
-        CrashScreen(
-            crashMessage = crashMessage!!,
-            onDismiss = {
-                prefs.edit().clear().apply()
-                crashMessage = null
-            }
-        )
-    } else {
-        India2026App()
+    // Step 1: Just show a simple message to test crash screen integration
+    androidx.compose.foundation.layout.Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = androidx.compose.ui.Alignment.Center
+    ) {
+        androidx.compose.foundation.layout.Column(
+            horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
+            verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(16.dp)
+        ) {
+            androidx.compose.material3.Text(
+                "India 2026 App",
+                style = MaterialTheme.typography.headlineMedium
+            )
+            androidx.compose.material3.Text(
+                "Testing crash handler integration...",
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
     }
 }
 
