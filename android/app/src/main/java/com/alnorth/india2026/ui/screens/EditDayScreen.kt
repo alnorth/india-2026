@@ -127,7 +127,7 @@ fun EditDayScreen(
                         maxLines = 10
                     )
 
-                    HorizontalDivider()
+                    Divider()
 
                     // Photo picker
                     PhotoPickerSection(

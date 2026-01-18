@@ -131,6 +131,7 @@ fun DayListScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DayCard(
     day: DaySummary,
