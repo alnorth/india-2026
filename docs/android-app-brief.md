@@ -32,9 +32,11 @@ Single user (the cyclist) - this is a private app, not for public distribution.
 
 ### 3. Photo Selection & Upload
 - Pick multiple photos from device gallery
+- Add caption for each photo
 - Preview selected photos before upload
 - Automatic image compression for web
 - Photos added to day's `photos/` directory
+- Photo captions stored in frontmatter
 
 ### 4. GitHub Integration
 - Hardcoded GitHub token (single-user private app)
@@ -118,15 +120,27 @@ Single user (the cyclist) - this is a private app, not for public distribution.
 - Kotlin Coroutines for async operations
 - Jetpack Navigation
 
+### Monorepo Structure
+The Android app lives in the same repository as the website:
+```
+india-2026/
+├── android/          # Android app source code
+├── website/          # Astro website source
+│   └── content/
+│       └── days/     # Day entries (markdown + photos)
+└── docs/             # Documentation
+```
+
 ### GitHub API Integration
 - Repository: `alnorth/india-2026`
-- Base branch: `main`
+- Base branch: `master`
+- Content path: `website/website/content/days/`
 - Feature branch naming: `app/day-XX-YYYY-MM-DD`
 - Required scopes: `repo` (for private repo access)
 - **Token**: Hardcoded in app (single-user private app)
 
 ### Build & Distribution
-- APK built via GitHub Actions
+- APK built via GitHub Actions (triggered by changes in `android/`)
 - Artifact available for download from workflow runs
 - No Play Store distribution (private app)
 
@@ -292,7 +306,7 @@ For GitHub Actions builds, the token is passed via secrets (see Step 9).
 
 interface GitHubApi {
 
-    // Fetch list of days (directories in content/days/)
+    // Fetch list of days (directories in website/content/days/)
     @GET("repos/{owner}/{repo}/contents/{path}")
     suspend fun getDirectoryContents(
         @Path("owner") owner: String,
@@ -441,11 +455,11 @@ class GitHubRepository(
 ) {
     private val owner = "alnorth"
     private val repo = "india-2026"
-    private val baseBranch = "main"
+    private val baseBranch = "master"
 
     // Fetch all existing days from the repository
     suspend fun getAllDays(): Result<List<DaySummary>> = runCatching {
-        val contents = api.getDirectoryContents(owner, repo, "content/days")
+        val contents = api.getDirectoryContents(owner, repo, "website/content/days")
         contents
             .filter { it.type == "dir" }
             .map { dir ->
@@ -459,7 +473,7 @@ class GitHubRepository(
 
     // Fetch a specific day's full content
     suspend fun getDayBySlug(slug: String): Result<DayEntry> = runCatching {
-        val indexContent = api.getFileContent(owner, repo, "content/days/$slug/index.md")
+        val indexContent = api.getFileContent(owner, repo, "website/content/days/$slug/index.md")
         val markdown = String(Base64.decode(indexContent.content, Base64.DEFAULT))
         parseDayEntry(slug, markdown, indexContent.sha)
     }
@@ -467,13 +481,13 @@ class GitHubRepository(
     // Update an existing day entry
     suspend fun updateDayEntry(
         dayEntry: DayEntry,
-        photos: List<Uri>,
+        newPhotos: List<SelectedPhoto>,
         context: Context
     ): Result<SubmissionResult> = runCatching {
 
-        // 1. Get latest commit SHA from main
-        val mainBranch = api.getBranch(owner, repo, baseBranch)
-        val baseSha = mainBranch.commit.sha
+        // 1. Get latest commit SHA from master
+        val masterBranch = api.getBranch(owner, repo, baseBranch)
+        val baseSha = masterBranch.commit.sha
 
         // 2. Create feature branch
         val branchName = "app/${dayEntry.slug}-${System.currentTimeMillis()}"
@@ -485,9 +499,31 @@ class GitHubRepository(
             )
         )
 
-        // 3. Update markdown file
-        val markdownContent = dayEntry.toMarkdown()
-        val markdownPath = "content/days/${dayEntry.slug}/index.md"
+        // 3. Upload new photos first (to get filenames)
+        val existingPhotoCount = getExistingPhotoCount(dayEntry.slug)
+        val uploadedPhotos = mutableListOf<PhotoWithCaption>()
+
+        newPhotos.forEachIndexed { index, selectedPhoto ->
+            val photoBytes = compressImage(context, selectedPhoto.uri)
+            val photoNum = existingPhotoCount + index + 1
+            val filename = "photo-${photoNum}.jpg"
+            val photoPath = "website/content/days/${dayEntry.slug}/photos/$filename"
+
+            api.createOrUpdateFile(
+                owner, repo, photoPath,
+                UpdateFileRequest(
+                    message = "Add photo $photoNum",
+                    content = Base64.encodeToString(photoBytes, Base64.NO_WRAP),
+                    branch = branchName
+                )
+            )
+
+            uploadedPhotos.add(PhotoWithCaption(filename, selectedPhoto.caption))
+        }
+
+        // 4. Update markdown file with photo captions
+        val markdownContent = dayEntry.toMarkdown(uploadedPhotos)
+        val markdownPath = "website/content/days/${dayEntry.slug}/index.md"
         api.createOrUpdateFile(
             owner, repo, markdownPath,
             UpdateFileRequest(
@@ -501,28 +537,12 @@ class GitHubRepository(
             )
         )
 
-        // 4. Upload new photos
-        val existingPhotoCount = getExistingPhotoCount(dayEntry.slug)
-        photos.forEachIndexed { index, uri ->
-            val photoBytes = compressImage(context, uri)
-            val photoNum = existingPhotoCount + index + 1
-            val photoPath = "content/days/${dayEntry.slug}/photos/photo-${photoNum}.jpg"
-            api.createOrUpdateFile(
-                owner, repo, photoPath,
-                UpdateFileRequest(
-                    message = "Add photo $photoNum",
-                    content = Base64.encodeToString(photoBytes, Base64.NO_WRAP),
-                    branch = branchName
-                )
-            )
-        }
-
         // 5. Create Pull Request
         val pr = api.createPullRequest(
             owner, repo,
             CreatePullRequestRequest(
                 title = "Update ${dayEntry.title}",
-                body = buildPrBody(dayEntry, photos.size),
+                body = buildPrBody(dayEntry, newPhotos.size),
                 head = branchName,
                 base = baseBranch
             )
@@ -537,7 +557,7 @@ class GitHubRepository(
 
     private suspend fun getExistingPhotoCount(slug: String): Int {
         return try {
-            val contents = api.getDirectoryContents(owner, repo, "content/days/$slug/photos")
+            val contents = api.getDirectoryContents(owner, repo, "website/content/days/$slug/photos")
             contents.count { it.type == "file" && it.name.endsWith(".jpg") }
         } catch (e: Exception) {
             0  // No photos directory yet
@@ -598,6 +618,7 @@ class GitHubRepository(
 
     private fun parseDayEntry(slug: String, markdown: String, sha: String): DayEntry {
         val frontmatter = extractFrontmatter(markdown)
+        val photos = parsePhotos(markdown)
         val content = markdown.substringAfter("---").substringAfter("---").trim()
         return DayEntry(
             slug = slug,
@@ -608,7 +629,8 @@ class GitHubRepository(
             location = frontmatter["location"] ?: "",
             status = frontmatter["status"] ?: "planned",
             stravaId = frontmatter["stravaId"]?.ifEmpty { null },
-            content = content
+            content = content,
+            photos = photos
         )
     }
 
@@ -619,12 +641,50 @@ class GitHubRepository(
             .trim()
 
         return frontmatterSection.lines()
-            .filter { it.contains(":") }
+            .filter { it.contains(":") && !it.startsWith("  ") && !it.startsWith("-") }
             .associate { line ->
                 val key = line.substringBefore(":").trim()
                 val value = line.substringAfter(":").trim().removeSurrounding("\"")
                 key to value
             }
+    }
+
+    private fun parsePhotos(markdown: String): List<PhotoWithCaption> {
+        val frontmatterSection = markdown
+            .substringAfter("---")
+            .substringBefore("---")
+
+        // Simple YAML list parser for photos
+        val photos = mutableListOf<PhotoWithCaption>()
+        var currentFilename: String? = null
+
+        val inPhotosSection = frontmatterSection.contains("photos:")
+        if (!inPhotosSection) return emptyList()
+
+        val photosSection = frontmatterSection
+            .substringAfter("photos:")
+            .substringBefore("\n---")
+
+        photosSection.lines().forEach { line ->
+            val trimmed = line.trim()
+            when {
+                trimmed.startsWith("- filename:") -> {
+                    currentFilename = trimmed
+                        .substringAfter("filename:")
+                        .trim()
+                        .removeSurrounding("\"")
+                }
+                trimmed.startsWith("caption:") && currentFilename != null -> {
+                    val caption = trimmed
+                        .substringAfter("caption:")
+                        .trim()
+                        .removeSurrounding("\"")
+                    photos.add(PhotoWithCaption(currentFilename!!, caption))
+                    currentFilename = null
+                }
+            }
+        }
+        return photos
     }
 
     private fun buildPrBody(entry: DayEntry, newPhotoCount: Int): String {
@@ -703,8 +763,13 @@ object ApiClient {
 ```kotlin
 // app/src/main/java/com/alnorth/india2026/model/DayEntry.kt
 
+data class PhotoWithCaption(
+    val filename: String,
+    val caption: String
+)
+
 data class DayEntry(
-    val slug: String,           // Directory name (e.g., "day-01-kanyakumari-to-nagercoil")
+    val slug: String,           // Directory name (e.g., "day-01-alamparai-pondicherry")
     val fileSha: String,        // Git SHA of index.md (required for updates)
     val date: String,           // YYYY-MM-DD (read-only, from existing file)
     val title: String,          // Read-only, from existing file
@@ -712,9 +777,10 @@ data class DayEntry(
     val location: String,       // Read-only, from existing file
     val status: String,         // Editable: planned, in-progress, completed
     val stravaId: String?,      // Editable: Strava activity ID
-    val content: String         // Editable: markdown content
+    val content: String,        // Editable: markdown content
+    val photos: List<PhotoWithCaption>  // Existing photos with captions
 ) {
-    fun toMarkdown(): String = buildString {
+    fun toMarkdown(newPhotos: List<PhotoWithCaption> = emptyList()): String = buildString {
         appendLine("---")
         appendLine("date: $date")
         appendLine("title: \"$title\"")
@@ -722,6 +788,17 @@ data class DayEntry(
         appendLine("location: \"$location\"")
         appendLine("status: $status")
         stravaId?.let { if (it.isNotEmpty()) appendLine("stravaId: \"$it\"") }
+
+        // Combine existing photos with new photos
+        val allPhotos = photos + newPhotos
+        if (allPhotos.isNotEmpty()) {
+            appendLine("photos:")
+            allPhotos.forEach { photo ->
+                appendLine("  - filename: \"${photo.filename}\"")
+                appendLine("    caption: \"${photo.caption}\"")
+            }
+        }
+
         appendLine("---")
         appendLine()
         appendLine(content)
@@ -729,31 +806,61 @@ data class DayEntry(
 }
 ```
 
-## Step 5: Photo Picker Implementation
+### Frontmatter Photo Format
+
+Photos are stored in the frontmatter as a YAML list:
+
+```yaml
+---
+date: 2026-01-20
+title: "Day 1: Alamparai to Pondicherry"
+distance: 45
+location: "Tamil Nadu"
+status: completed
+stravaId: "1234567890"
+photos:
+  - filename: "photo-1.jpg"
+    caption: "Starting point at Alamparai Fort"
+  - filename: "photo-2.jpg"
+    caption: "Lunch stop at a roadside dhaba"
+  - filename: "photo-3.jpg"
+    caption: "Arriving in Pondicherry"
+---
+```
+
+## Step 5: Photo Picker with Captions
 
 ```kotlin
 // app/src/main/java/com/alnorth/india2026/ui/composables/PhotoPicker.kt
 
+// Represents a photo selected from gallery with its caption
+data class SelectedPhoto(
+    val uri: Uri,
+    val caption: String = ""
+)
+
 @Composable
 fun PhotoPickerSection(
-    selectedPhotos: List<Uri>,
-    onPhotosSelected: (List<Uri>) -> Unit,
+    selectedPhotos: List<SelectedPhoto>,
+    onPhotosChanged: (List<SelectedPhoto>) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
 
-    // Photo picker launcher (Android 13+ uses new photo picker)
+    // Photo picker launcher
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickMultipleVisualMedia(maxItems = 20)
     ) { uris ->
-        onPhotosSelected(selectedPhotos + uris)
+        val newPhotos = uris.map { SelectedPhoto(uri = it, caption = "") }
+        onPhotosChanged(selectedPhotos + newPhotos)
     }
 
     // Fallback for older Android versions
     val legacyPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetMultipleContents()
     ) { uris ->
-        onPhotosSelected(selectedPhotos + uris)
+        val newPhotos = uris.map { SelectedPhoto(uri = it, caption = "") }
+        onPhotosChanged(selectedPhotos + newPhotos)
     }
 
     Column(modifier = modifier) {
@@ -763,7 +870,7 @@ fun PhotoPickerSection(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Photos (${selectedPhotos.size})",
+                text = "New Photos (${selectedPhotos.size})",
                 style = MaterialTheme.typography.titleMedium
             )
 
@@ -787,43 +894,22 @@ fun PhotoPickerSection(
         Spacer(Modifier.height(8.dp))
 
         if (selectedPhotos.isNotEmpty()) {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(3),
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-                modifier = Modifier.height(200.dp)
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.heightIn(max = 400.dp)
             ) {
-                items(selectedPhotos) { uri ->
-                    Box {
-                        AsyncImage(
-                            model = uri,
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .aspectRatio(1f)
-                                .clip(RoundedCornerShape(8.dp))
-                        )
-
-                        IconButton(
-                            onClick = {
-                                onPhotosSelected(selectedPhotos - uri)
-                            },
-                            modifier = Modifier
-                                .align(Alignment.TopEnd)
-                                .size(24.dp)
-                                .background(
-                                    Color.Black.copy(alpha = 0.5f),
-                                    CircleShape
-                                )
-                        ) {
-                            Icon(
-                                Icons.Default.Close,
-                                contentDescription = "Remove",
-                                tint = Color.White,
-                                modifier = Modifier.size(16.dp)
-                            )
+                itemsIndexed(selectedPhotos) { index, photo ->
+                    PhotoWithCaptionCard(
+                        photo = photo,
+                        onCaptionChanged = { newCaption ->
+                            val updated = selectedPhotos.toMutableList()
+                            updated[index] = photo.copy(caption = newCaption)
+                            onPhotosChanged(updated)
+                        },
+                        onRemove = {
+                            onPhotosChanged(selectedPhotos - photo)
                         }
-                    }
+                    )
                 }
             }
         } else {
@@ -841,6 +927,56 @@ fun PhotoPickerSection(
                 Text(
                     "No photos selected",
                     color = MaterialTheme.colorScheme.outline
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun PhotoWithCaptionCard(
+    photo: SelectedPhoto,
+    onCaptionChanged: (String) -> Unit,
+    onRemove: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(8.dp),
+            verticalAlignment = Alignment.Top
+        ) {
+            // Photo thumbnail
+            AsyncImage(
+                model = photo.uri,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(80.dp)
+                    .clip(RoundedCornerShape(8.dp))
+            )
+
+            Spacer(Modifier.width(12.dp))
+
+            // Caption input
+            Column(modifier = Modifier.weight(1f)) {
+                OutlinedTextField(
+                    value = photo.caption,
+                    onValueChange = onCaptionChanged,
+                    label = { Text("Caption") },
+                    placeholder = { Text("Describe this photo...") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = false,
+                    maxLines = 2
+                )
+            }
+
+            // Remove button
+            IconButton(onClick = onRemove) {
+                Icon(
+                    Icons.Default.Close,
+                    contentDescription = "Remove",
+                    tint = MaterialTheme.colorScheme.error
                 )
             }
         }
@@ -1254,7 +1390,7 @@ class EditDayViewModel : ViewModel() {
         updateEditingState { it.copy(content = content) }
     }
 
-    fun updatePhotos(photos: List<Uri>) {
+    fun updatePhotos(photos: List<SelectedPhoto>) {
         updateEditingState { it.copy(newPhotos = photos) }
     }
 
@@ -1303,7 +1439,7 @@ sealed class EditDayUiState {
         val status: String,
         val stravaId: String,
         val content: String,
-        val newPhotos: List<Uri>,
+        val newPhotos: List<SelectedPhoto>,  // Photos with captions
         val hasChanges: Boolean
     ) : EditDayUiState()
     data class Submitting(val message: String) : EditDayUiState()
@@ -1594,13 +1730,14 @@ In your repository settings, add these secrets:
 
 ```
 india-2026/
-├── android/                          # Android app source
+├── android/                          # Android app source (NEW)
 │   ├── app/
 │   │   ├── src/
 │   │   │   └── main/
 │   │   │       ├── java/com/alnorth/india2026/
 │   │   │       │   ├── api/
 │   │   │       │   │   ├── GitHubApi.kt
+│   │   │       │   │   ├── ApiClient.kt
 │   │   │       │   │   └── Models.kt
 │   │   │       │   ├── repository/
 │   │   │       │   │   └── GitHubRepository.kt
@@ -1615,22 +1752,34 @@ india-2026/
 │   │   │       │   │   │   └── PhotoPicker.kt
 │   │   │       │   │   └── theme/
 │   │   │       │   │       └── Theme.kt
-│   │   │       │   ├── viewmodel/
-│   │   │       │   │   ├── DayListViewModel.kt
-│   │   │       │   │   ├── EditDayViewModel.kt
-│   │   │       │   │   └── ResultViewModel.kt
 │   │   │       │   └── MainActivity.kt
 │   │   │       ├── res/
 │   │   │       └── AndroidManifest.xml
 │   │   └── build.gradle.kts
 │   ├── build.gradle.kts
 │   ├── settings.gradle.kts
-│   └── gradle.properties
+│   ├── gradle.properties
+│   └── local.properties              # Contains GITHUB_TOKEN (gitignored)
+│
+├── website/                          # Astro website (existing)
+│   ├── src/                          # Astro source files
+│   ├── content/
+│   │   └── days/                     # Day entries edited by the app
+│   │       ├── day-01-alamparai-pondicherry/
+│   │       │   ├── index.md          # Frontmatter + content + photo captions
+│   │       │   ├── route.gpx
+│   │       │   └── photos/
+│   │       │       ├── photo-1.jpg
+│   │       │       └── photo-2.jpg
+│   │       └── day-02-laxmivillas/
+│   │           └── ...
+│   ├── package.json
+│   └── astro.config.mjs
+│
 ├── .github/
 │   └── workflows/
-│       └── build-android.yml
-├── content/                          # Website content (existing)
-├── src/                              # Astro site (existing)
+│       └── build-android.yml         # APK build workflow
+│
 └── docs/
     └── android-app-brief.md          # This document
 ```
@@ -1669,9 +1818,12 @@ The token is injected into the build at compile time and hardcoded into the APK 
 This Android app provides a streamlined way to update the India 2026 cycle tour website directly from a phone. Key features:
 
 1. **Edit existing days** - Select from pre-configured day entries and update status, Strava ID, and content
-2. **Native photo picker** - Select multiple photos from gallery with automatic compression
-3. **GitHub integration** - Automatic branch creation and PR submission
-4. **Preview links** - Direct access to PR and Amplify preview URLs
-5. **Automated builds** - GitHub Actions compiles APK on every push
+2. **Photo picker with captions** - Select photos from gallery, add captions, auto-compress for web
+3. **Monorepo structure** - App lives alongside website in same repository (`android/` and `website/`)
+4. **GitHub integration** - Automatic branch creation and PR submission to `master`
+5. **Preview links** - Direct access to PR and Amplify preview URLs
+6. **Automated builds** - GitHub Actions compiles APK on changes to `android/`
 
 The app is designed for single-user private use, with minimal overhead and maximum convenience for updating the site while traveling. Day entries (title, date, distance, location) are pre-configured in the repository - the app only edits existing days, it does not create new ones.
+
+Photo captions are stored in the frontmatter of each day's `index.md` file, allowing the website to display them alongside images.
