@@ -4,18 +4,17 @@ applications:
       phases:
         preBuild:
           commands:
-            - cd website
             - npm ci
         build:
           commands:
             - npm run build
       artifacts:
-        baseDirectory: website/dist
+        baseDirectory: dist
         files:
           - '**/*'
       cache:
         paths:
-          - website/node_modules/**/*
-          - website/.astro/**/*
+          - node_modules/**/*
+          - .astro/**/*
     appRoot: website
 platform: WEB
