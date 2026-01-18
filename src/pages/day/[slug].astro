@@ -5,7 +5,7 @@ import { format } from 'date-fns';
 import GPXMap from '@/components/GPXMap';
 import ElevationProfile from '@/components/ElevationProfile';
 import StravaEmbed from '@/components/StravaEmbed';
-import PhotoGallery from '@/components/PhotoGallery';
+import PhotoGalleryOptimized from '@/components/PhotoGalleryOptimized.astro';
 import { kmToMiles, metersToFeet } from '@/lib/unitConversions';
 
 export function getStaticPaths() {
@@ -131,12 +131,10 @@ if (!day) {
         <div set:html={day.content} />
       </section>
 
-      {day.photos && day.photos.length > 0 && (
-        <section class="mb-8">
-          <h2 class="text-2xl font-bold mb-4">Photos</h2>
-          <PhotoGallery client:load photos={day.photos} />
-        </section>
-      )}
+      <section class="mb-8">
+        <h2 class="text-2xl font-bold mb-4">Photos</h2>
+        <PhotoGalleryOptimized slug={slug} />
+      </section>
     </article>
   </div>
 </BaseLayout>
