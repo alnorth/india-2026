@@ -2,7 +2,7 @@
 
 ## Overview
 
-A private Android app for updating the India 2026 cycle tour website while on the road. The app allows the rider to create daily posts with photos, GPS routes, and written content directly from their phone. Updates are submitted via GitHub Pull Requests, with Amplify preview links for verification before merging.
+A private Android app for updating the India 2026 cycle tour website while on the road. The app allows the rider to edit existing day entries - adding photos, updating content, and changing status - directly from their phone. Updates are submitted via GitHub Pull Requests, with Amplify preview links for verification before merging.
 
 ## Problem Statement
 
@@ -18,31 +18,28 @@ Single user (the cyclist) - this is a private app, not for public distribution.
 
 ## Core Features
 
-### 1. Day Entry Creation
-- Create new day entries with:
-  - Title (e.g., "Day 5: Chennai to Mahabalipuram")
-  - Date picker
-  - Distance (km)
-  - Location
-  - Status (planned/in-progress/completed)
-  - Strava activity ID (optional)
-  - Written content (markdown supported)
+### 1. Day Selection
+- Fetch list of existing days from GitHub repository
+- Display days with title, date, and current status
+- Select a day to edit
 
-### 2. Photo Selection & Upload
+### 2. Day Entry Editing
+- Edit existing day entries:
+  - Status (planned/in-progress/completed)
+  - Strava activity ID
+  - Written content (markdown supported)
+- View current values before editing
+
+### 3. Photo Selection & Upload
 - Pick multiple photos from device gallery
 - Preview selected photos before upload
 - Automatic image compression for web
-- Photos organized in day's `photos/` directory
-
-### 3. GPX File Attachment
-- Select GPX file from device storage
-- Preview route on map before upload
-- Renamed to `route.gpx` automatically
+- Photos added to day's `photos/` directory
 
 ### 4. GitHub Integration
-- Authenticate with GitHub (Personal Access Token)
+- Hardcoded GitHub token (single-user private app)
 - Create feature branch automatically
-- Commit all files (markdown, photos, GPX)
+- Commit updated markdown and new photos
 - Create Pull Request with descriptive title/body
 
 ### 5. Preview & Status
@@ -60,17 +57,21 @@ Single user (the cyclist) - this is a private app, not for public distribution.
          │
          ▼
 ┌─────────────────┐
-│  Create New Day │
-│    or Edit      │
+│  Loading Days   │
+│  (from GitHub)  │
 └────────┬────────┘
          │
          ▼
 ┌─────────────────┐
-│  Fill Details   │
-│  - Title        │
-│  - Date         │
-│  - Distance     │
-│  - Location     │
+│  Select Day     │
+│  to Edit        │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│  Edit Details   │
+│  - Status       │
+│  - Strava ID    │
 │  - Content      │
 └────────┬────────┘
          │
@@ -78,12 +79,6 @@ Single user (the cyclist) - this is a private app, not for public distribution.
 ┌─────────────────┐
 │  Add Photos     │
 │  (from gallery) │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│  Add GPX Route  │
-│   (optional)    │
 └────────┬────────┘
          │
          ▼
@@ -297,6 +292,22 @@ For GitHub Actions builds, the token is passed via secrets (see Step 9).
 
 interface GitHubApi {
 
+    // Fetch list of days (directories in content/days/)
+    @GET("repos/{owner}/{repo}/contents/{path}")
+    suspend fun getDirectoryContents(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Path("path", encoded = true) path: String
+    ): List<GitHubContent>
+
+    // Fetch a specific file's contents
+    @GET("repos/{owner}/{repo}/contents/{path}")
+    suspend fun getFileContent(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Path("path", encoded = true) path: String
+    ): GitHubContent
+
     @GET("repos/{owner}/{repo}/branches/{branch}")
     suspend fun getBranch(
         @Path("owner") owner: String,
@@ -316,7 +327,7 @@ interface GitHubApi {
         @Path("owner") owner: String,
         @Path("repo") repo: String,
         @Path("path", encoded = true) path: String,
-        @Body request: CreateFileRequest
+        @Body request: UpdateFileRequest
     ): FileResponse
 
     @POST("repos/{owner}/{repo}/pulls")
@@ -340,6 +351,16 @@ interface GitHubApi {
 ```kotlin
 // app/src/main/java/com/alnorth/india2026/api/Models.kt
 
+// For fetching existing content from GitHub
+data class GitHubContent(
+    val name: String,
+    val path: String,
+    val sha: String,
+    val type: String,  // "file" or "dir"
+    val content: String?,  // Base64 encoded (only for files)
+    val encoding: String?
+)
+
 data class BranchResponse(
     val name: String,
     val commit: CommitRef
@@ -359,10 +380,12 @@ data class RefResponse(
     val url: String
 )
 
-data class CreateFileRequest(
+// For updating existing files (requires sha) or creating new ones
+data class UpdateFileRequest(
     val message: String,
     val content: String,  // Base64 encoded
-    val branch: String
+    val branch: String,
+    val sha: String? = null  // Required when updating existing file
 )
 
 data class FileResponse(
@@ -420,15 +443,31 @@ class GitHubRepository(
     private val repo = "india-2026"
     private val baseBranch = "main"
 
-    companion object {
-        // Token accessed directly from BuildConfig (hardcoded at build time)
-        val token: String = BuildConfig.GITHUB_TOKEN
+    // Fetch all existing days from the repository
+    suspend fun getAllDays(): Result<List<DaySummary>> = runCatching {
+        val contents = api.getDirectoryContents(owner, repo, "content/days")
+        contents
+            .filter { it.type == "dir" }
+            .map { dir ->
+                // Fetch the index.md for each day to get metadata
+                val indexContent = api.getFileContent(owner, repo, "${dir.path}/index.md")
+                val markdown = String(Base64.decode(indexContent.content, Base64.DEFAULT))
+                parseDaySummary(dir.name, markdown, indexContent.sha)
+            }
+            .sortedBy { it.date }
     }
 
-    suspend fun createDayEntry(
+    // Fetch a specific day's full content
+    suspend fun getDayBySlug(slug: String): Result<DayEntry> = runCatching {
+        val indexContent = api.getFileContent(owner, repo, "content/days/$slug/index.md")
+        val markdown = String(Base64.decode(indexContent.content, Base64.DEFAULT))
+        parseDayEntry(slug, markdown, indexContent.sha)
+    }
+
+    // Update an existing day entry
+    suspend fun updateDayEntry(
         dayEntry: DayEntry,
         photos: List<Uri>,
-        gpxUri: Uri?,
         context: Context
     ): Result<SubmissionResult> = runCatching {
 
@@ -446,57 +485,44 @@ class GitHubRepository(
             )
         )
 
-        // 3. Create markdown file
+        // 3. Update markdown file
         val markdownContent = dayEntry.toMarkdown()
         val markdownPath = "content/days/${dayEntry.slug}/index.md"
         api.createOrUpdateFile(
             owner, repo, markdownPath,
-            CreateFileRequest(
-                message = "Add ${dayEntry.title}",
+            UpdateFileRequest(
+                message = "Update ${dayEntry.title}",
                 content = Base64.encodeToString(
                     markdownContent.toByteArray(),
                     Base64.NO_WRAP
                 ),
-                branch = branchName
+                branch = branchName,
+                sha = dayEntry.fileSha  // Required to update existing file
             )
         )
 
-        // 4. Upload photos
+        // 4. Upload new photos
+        val existingPhotoCount = getExistingPhotoCount(dayEntry.slug)
         photos.forEachIndexed { index, uri ->
             val photoBytes = compressImage(context, uri)
-            val photoPath = "content/days/${dayEntry.slug}/photos/photo-${index + 1}.jpg"
+            val photoNum = existingPhotoCount + index + 1
+            val photoPath = "content/days/${dayEntry.slug}/photos/photo-${photoNum}.jpg"
             api.createOrUpdateFile(
                 owner, repo, photoPath,
-                CreateFileRequest(
-                    message = "Add photo ${index + 1}",
+                UpdateFileRequest(
+                    message = "Add photo $photoNum",
                     content = Base64.encodeToString(photoBytes, Base64.NO_WRAP),
                     branch = branchName
                 )
             )
         }
 
-        // 5. Upload GPX if provided
-        gpxUri?.let { uri ->
-            val gpxBytes = context.contentResolver.openInputStream(uri)?.readBytes()
-            if (gpxBytes != null) {
-                val gpxPath = "content/days/${dayEntry.slug}/route.gpx"
-                api.createOrUpdateFile(
-                    owner, repo, gpxPath,
-                    CreateFileRequest(
-                        message = "Add GPX route",
-                        content = Base64.encodeToString(gpxBytes, Base64.NO_WRAP),
-                        branch = branchName
-                    )
-                )
-            }
-        }
-
-        // 6. Create Pull Request
+        // 5. Create Pull Request
         val pr = api.createPullRequest(
             owner, repo,
             CreatePullRequestRequest(
-                title = "Add ${dayEntry.title}",
-                body = buildPrBody(dayEntry, photos.size, gpxUri != null),
+                title = "Update ${dayEntry.title}",
+                body = buildPrBody(dayEntry, photos.size),
                 head = branchName,
                 base = baseBranch
             )
@@ -509,15 +535,21 @@ class GitHubRepository(
         )
     }
 
+    private suspend fun getExistingPhotoCount(slug: String): Int {
+        return try {
+            val contents = api.getDirectoryContents(owner, repo, "content/days/$slug/photos")
+            contents.count { it.type == "file" && it.name.endsWith(".jpg") }
+        } catch (e: Exception) {
+            0  // No photos directory yet
+        }
+    }
+
     suspend fun getAmplifyPreviewUrl(prNumber: Int): String? {
-        // Poll PR comments for Amplify bot comment with preview URL
         val comments = api.getPullRequestComments(owner, repo, prNumber)
         val amplifyComment = comments.find {
             it.user.login == "aws-amplify-us-east-1" ||
             it.body.contains("amplifyapp.com")
         }
-
-        // Extract URL from comment body
         return amplifyComment?.body?.let { body ->
             val regex = Regex("""https://[a-z0-9]+\.amplifyapp\.com[^\s\)]*""")
             regex.find(body)?.value
@@ -528,7 +560,6 @@ class GitHubRepository(
         val inputStream = context.contentResolver.openInputStream(uri)
         val bitmap = BitmapFactory.decodeStream(inputStream)
 
-        // Resize if too large (max 1920px on longest side)
         val maxDimension = 1920
         val scale = if (bitmap.width > bitmap.height) {
             maxDimension.toFloat() / bitmap.width
@@ -552,7 +583,51 @@ class GitHubRepository(
         return outputStream.toByteArray()
     }
 
-    private fun buildPrBody(entry: DayEntry, photoCount: Int, hasGpx: Boolean): String {
+    private fun parseDaySummary(slug: String, markdown: String, sha: String): DaySummary {
+        // Parse frontmatter to extract summary info
+        val frontmatter = extractFrontmatter(markdown)
+        return DaySummary(
+            slug = slug,
+            title = frontmatter["title"] ?: slug,
+            date = frontmatter["date"] ?: "",
+            status = frontmatter["status"] ?: "planned",
+            distance = frontmatter["distance"]?.toIntOrNull() ?: 0,
+            location = frontmatter["location"] ?: ""
+        )
+    }
+
+    private fun parseDayEntry(slug: String, markdown: String, sha: String): DayEntry {
+        val frontmatter = extractFrontmatter(markdown)
+        val content = markdown.substringAfter("---").substringAfter("---").trim()
+        return DayEntry(
+            slug = slug,
+            fileSha = sha,
+            date = frontmatter["date"] ?: "",
+            title = frontmatter["title"] ?: slug,
+            distance = frontmatter["distance"]?.toIntOrNull() ?: 0,
+            location = frontmatter["location"] ?: "",
+            status = frontmatter["status"] ?: "planned",
+            stravaId = frontmatter["stravaId"]?.ifEmpty { null },
+            content = content
+        )
+    }
+
+    private fun extractFrontmatter(markdown: String): Map<String, String> {
+        val frontmatterSection = markdown
+            .substringAfter("---")
+            .substringBefore("---")
+            .trim()
+
+        return frontmatterSection.lines()
+            .filter { it.contains(":") }
+            .associate { line ->
+                val key = line.substringBefore(":").trim()
+                val value = line.substringAfter(":").trim().removeSurrounding("\"")
+                key to value
+            }
+    }
+
+    private fun buildPrBody(entry: DayEntry, newPhotoCount: Int): String {
         return buildString {
             appendLine("## ${entry.title}")
             appendLine()
@@ -561,19 +636,29 @@ class GitHubRepository(
             appendLine("**Location:** ${entry.location}")
             appendLine("**Status:** ${entry.status}")
             appendLine()
-            appendLine("### Content")
+            appendLine("### Content Preview")
             appendLine(entry.content.take(500))
             if (entry.content.length > 500) appendLine("...")
             appendLine()
-            appendLine("### Attachments")
-            appendLine("- Photos: $photoCount")
-            appendLine("- GPX Route: ${if (hasGpx) "Yes" else "No"}")
-            appendLine()
+            if (newPhotoCount > 0) {
+                appendLine("### New Photos Added: $newPhotoCount")
+                appendLine()
+            }
             appendLine("---")
             appendLine("*Submitted via India 2026 Android App*")
         }
     }
 }
+
+// Summary for day list display
+data class DaySummary(
+    val slug: String,
+    val title: String,
+    val date: String,
+    val status: String,
+    val distance: Int,
+    val location: String
+)
 
 data class SubmissionResult(
     val prNumber: Int,
@@ -619,26 +704,16 @@ object ApiClient {
 // app/src/main/java/com/alnorth/india2026/model/DayEntry.kt
 
 data class DayEntry(
-    val date: String,           // YYYY-MM-DD
-    val title: String,
-    val distance: Int,
-    val location: String,
-    val status: String,         // planned, in-progress, completed
-    val stravaId: String?,
-    val content: String
+    val slug: String,           // Directory name (e.g., "day-01-kanyakumari-to-nagercoil")
+    val fileSha: String,        // Git SHA of index.md (required for updates)
+    val date: String,           // YYYY-MM-DD (read-only, from existing file)
+    val title: String,          // Read-only, from existing file
+    val distance: Int,          // Read-only, from existing file
+    val location: String,       // Read-only, from existing file
+    val status: String,         // Editable: planned, in-progress, completed
+    val stravaId: String?,      // Editable: Strava activity ID
+    val content: String         // Editable: markdown content
 ) {
-    val slug: String
-        get() {
-            // Generate slug from title: "Day 5: Chennai to Mahabalipuram" -> "day-05-chennai-to-mahabalipuram"
-            val dayNumber = Regex("""Day (\d+)""").find(title)?.groupValues?.get(1)?.padStart(2, '0') ?: "00"
-            val locationPart = title.substringAfter(":").trim()
-                .lowercase()
-                .replace(Regex("[^a-z0-9\\s]"), "")
-                .replace(Regex("\\s+"), "-")
-                .take(40)
-            return "day-$dayNumber-$locationPart"
-        }
-
     fun toMarkdown(): String = buildString {
         appendLine("---")
         appendLine("date: $date")
@@ -646,7 +721,7 @@ data class DayEntry(
         appendLine("distance: $distance")
         appendLine("location: \"$location\"")
         appendLine("status: $status")
-        stravaId?.let { appendLine("stravaId: \"$it\"") }
+        stravaId?.let { if (it.isNotEmpty()) appendLine("stravaId: \"$it\"") }
         appendLine("---")
         appendLine()
         appendLine(content)
@@ -773,113 +848,203 @@ fun PhotoPickerSection(
 }
 ```
 
-## Step 6: GPX File Picker
+## Step 6: Day Selection Screen
 
 ```kotlin
-// app/src/main/java/com/alnorth/india2026/ui/composables/GpxPicker.kt
-
-@Composable
-fun GpxPickerSection(
-    selectedGpx: Uri?,
-    onGpxSelected: (Uri?) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val context = LocalContext.current
-
-    val gpxPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri ->
-        onGpxSelected(uri)
-    }
-
-    Column(modifier = modifier) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "GPX Route",
-                style = MaterialTheme.typography.titleMedium
-            )
-
-            if (selectedGpx == null) {
-                Button(
-                    onClick = {
-                        gpxPickerLauncher.launch("application/gpx+xml")
-                    }
-                ) {
-                    Icon(Icons.Default.Map, contentDescription = null)
-                    Spacer(Modifier.width(4.dp))
-                    Text("Add GPX")
-                }
-            } else {
-                TextButton(
-                    onClick = { onGpxSelected(null) }
-                ) {
-                    Text("Remove")
-                }
-            }
-        }
-
-        if (selectedGpx != null) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp)
-            ) {
-                Row(
-                    modifier = Modifier.padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        Icons.Default.Route,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        text = getFileName(context, selectedGpx) ?: "route.gpx",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-            }
-        }
-    }
-}
-
-private fun getFileName(context: Context, uri: Uri): String? {
-    return context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-        val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-        cursor.moveToFirst()
-        cursor.getString(nameIndex)
-    }
-}
-```
-
-## Step 7: Main Entry Form Screen
-
-```kotlin
-// app/src/main/java/com/alnorth/india2026/ui/screens/CreateEntryScreen.kt
+// app/src/main/java/com/alnorth/india2026/ui/screens/DayListScreen.kt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CreateEntryScreen(
-    viewModel: CreateEntryViewModel = viewModel(),
+fun DayListScreen(
+    viewModel: DayListViewModel = viewModel(),
+    onDaySelected: (String) -> Unit
+) {
+    val uiState by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.loadDays()
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("India 2026 - Select Day") }
+            )
+        }
+    ) { padding ->
+        when (val state = uiState) {
+            is DayListUiState.Loading -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+
+            is DayListUiState.Success -> {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(state.days) { day ->
+                        DayCard(
+                            day = day,
+                            onClick = { onDaySelected(day.slug) }
+                        )
+                    }
+                }
+            }
+
+            is DayListUiState.Error -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(state.message, color = MaterialTheme.colorScheme.error)
+                        Spacer(Modifier.height(16.dp))
+                        Button(onClick = { viewModel.loadDays() }) {
+                            Text("Retry")
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun DayCard(
+    day: DaySummary,
+    onClick: () -> Unit
+) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = day.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.weight(1f)
+                )
+                StatusBadge(status = day.status)
+            }
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = "${day.date} • ${day.distance} km • ${day.location}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.outline
+            )
+        }
+    }
+}
+
+@Composable
+fun StatusBadge(status: String) {
+    val (color, text) = when (status) {
+        "completed" -> MaterialTheme.colorScheme.primary to "Done"
+        "in-progress" -> MaterialTheme.colorScheme.tertiary to "Today"
+        else -> MaterialTheme.colorScheme.outline to "Planned"
+    }
+    Surface(
+        color = color.copy(alpha = 0.1f),
+        shape = RoundedCornerShape(4.dp)
+    ) {
+        Text(
+            text = text,
+            color = color,
+            style = MaterialTheme.typography.labelSmall,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+        )
+    }
+}
+
+class DayListViewModel : ViewModel() {
+    private val repository = ApiClient.repository
+
+    private val _uiState = MutableStateFlow<DayListUiState>(DayListUiState.Loading)
+    val uiState: StateFlow<DayListUiState> = _uiState.asStateFlow()
+
+    fun loadDays() {
+        viewModelScope.launch {
+            _uiState.value = DayListUiState.Loading
+            repository.getAllDays()
+                .onSuccess { days ->
+                    _uiState.value = DayListUiState.Success(days)
+                }
+                .onFailure { e ->
+                    _uiState.value = DayListUiState.Error(e.message ?: "Failed to load days")
+                }
+        }
+    }
+}
+
+sealed class DayListUiState {
+    object Loading : DayListUiState()
+    data class Success(val days: List<DaySummary>) : DayListUiState()
+    data class Error(val message: String) : DayListUiState()
+}
+```
+
+## Step 7: Edit Day Screen
+
+```kotlin
+// app/src/main/java/com/alnorth/india2026/ui/screens/EditDayScreen.kt
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EditDayScreen(
+    slug: String,
+    viewModel: EditDayViewModel = viewModel(),
+    onNavigateBack: () -> Unit,
     onNavigateToResult: (SubmissionResult) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
+    LaunchedEffect(slug) {
+        viewModel.loadDay(slug)
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("New Day Entry") }
+                title = { Text("Edit Day") },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                }
             )
         }
     ) { padding ->
         when (val state = uiState) {
-            is CreateEntryUiState.Form -> {
+            is EditDayUiState.Loading -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+
+            is EditDayUiState.Editing -> {
                 Column(
                     modifier = Modifier
                         .padding(padding)
@@ -887,54 +1052,43 @@ fun CreateEntryScreen(
                         .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // Title
-                    OutlinedTextField(
-                        value = state.title,
-                        onValueChange = viewModel::updateTitle,
-                        label = { Text("Title") },
-                        placeholder = { Text("Day 1: Kanyakumari to Nagercoil") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    // Read-only header info
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = state.dayEntry.title,
+                                style = MaterialTheme.typography.titleLarge
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                text = "${state.dayEntry.date} • ${state.dayEntry.distance} km • ${state.dayEntry.location}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.outline
+                            )
+                        }
+                    }
 
-                    // Date picker
-                    DatePickerField(
-                        selectedDate = state.date,
-                        onDateSelected = viewModel::updateDate
-                    )
-
-                    // Distance
-                    OutlinedTextField(
-                        value = state.distance,
-                        onValueChange = viewModel::updateDistance,
-                        label = { Text("Distance (km)") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    // Location
-                    OutlinedTextField(
-                        value = state.location,
-                        onValueChange = viewModel::updateLocation,
-                        label = { Text("Location") },
-                        placeholder = { Text("Tamil Nadu, India") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    // Status dropdown
+                    // Status dropdown (editable)
                     StatusDropdown(
                         selectedStatus = state.status,
                         onStatusSelected = viewModel::updateStatus
                     )
 
-                    // Strava ID (optional)
+                    // Strava ID (editable)
                     OutlinedTextField(
                         value = state.stravaId,
                         onValueChange = viewModel::updateStravaId,
-                        label = { Text("Strava Activity ID (optional)") },
+                        label = { Text("Strava Activity ID") },
+                        placeholder = { Text("e.g., 1234567890") },
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    // Content
+                    // Content (editable)
                     OutlinedTextField(
                         value = state.content,
                         onValueChange = viewModel::updateContent,
@@ -945,20 +1099,12 @@ fun CreateEntryScreen(
                         maxLines = 10
                     )
 
-                    Divider()
+                    HorizontalDivider()
 
                     // Photo picker
                     PhotoPickerSection(
-                        selectedPhotos = state.photos,
+                        selectedPhotos = state.newPhotos,
                         onPhotosSelected = viewModel::updatePhotos
-                    )
-
-                    Divider()
-
-                    // GPX picker
-                    GpxPickerSection(
-                        selectedGpx = state.gpxUri,
-                        onGpxSelected = viewModel::updateGpx
                     )
 
                     Spacer(Modifier.height(16.dp))
@@ -967,14 +1113,14 @@ fun CreateEntryScreen(
                     Button(
                         onClick = { viewModel.submit(context) },
                         modifier = Modifier.fillMaxWidth(),
-                        enabled = state.isValid
+                        enabled = state.hasChanges
                     ) {
                         Text("Create Pull Request")
                     }
                 }
             }
 
-            is CreateEntryUiState.Submitting -> {
+            is EditDayUiState.Submitting -> {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -991,13 +1137,13 @@ fun CreateEntryScreen(
                 }
             }
 
-            is CreateEntryUiState.Success -> {
+            is EditDayUiState.Success -> {
                 LaunchedEffect(state.result) {
                     onNavigateToResult(state.result)
                 }
             }
 
-            is CreateEntryUiState.Error -> {
+            is EditDayUiState.Error -> {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -1018,7 +1164,7 @@ fun CreateEntryScreen(
                             state.message,
                             color = MaterialTheme.colorScheme.error
                         )
-                        Button(onClick = viewModel::retry) {
+                        Button(onClick = { viewModel.loadDay(slug) }) {
                             Text("Try Again")
                         }
                     }
@@ -1026,6 +1172,143 @@ fun CreateEntryScreen(
             }
         }
     }
+}
+
+@Composable
+fun StatusDropdown(
+    selectedStatus: String,
+    onStatusSelected: (String) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val options = listOf("planned", "in-progress", "completed")
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = it }
+    ) {
+        OutlinedTextField(
+            value = selectedStatus.replaceFirstChar { it.uppercase() },
+            onValueChange = {},
+            readOnly = true,
+            label = { Text("Status") },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .menuAnchor()
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            options.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option.replaceFirstChar { it.uppercase() }) },
+                    onClick = {
+                        onStatusSelected(option)
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
+}
+
+class EditDayViewModel : ViewModel() {
+    private val repository = ApiClient.repository
+
+    private val _uiState = MutableStateFlow<EditDayUiState>(EditDayUiState.Loading)
+    val uiState: StateFlow<EditDayUiState> = _uiState.asStateFlow()
+
+    private var originalEntry: DayEntry? = null
+
+    fun loadDay(slug: String) {
+        viewModelScope.launch {
+            _uiState.value = EditDayUiState.Loading
+            repository.getDayBySlug(slug)
+                .onSuccess { entry ->
+                    originalEntry = entry
+                    _uiState.value = EditDayUiState.Editing(
+                        dayEntry = entry,
+                        status = entry.status,
+                        stravaId = entry.stravaId ?: "",
+                        content = entry.content,
+                        newPhotos = emptyList(),
+                        hasChanges = false
+                    )
+                }
+                .onFailure { e ->
+                    _uiState.value = EditDayUiState.Error(e.message ?: "Failed to load day")
+                }
+        }
+    }
+
+    fun updateStatus(status: String) {
+        updateEditingState { it.copy(status = status) }
+    }
+
+    fun updateStravaId(stravaId: String) {
+        updateEditingState { it.copy(stravaId = stravaId) }
+    }
+
+    fun updateContent(content: String) {
+        updateEditingState { it.copy(content = content) }
+    }
+
+    fun updatePhotos(photos: List<Uri>) {
+        updateEditingState { it.copy(newPhotos = photos) }
+    }
+
+    private fun updateEditingState(update: (EditDayUiState.Editing) -> EditDayUiState.Editing) {
+        val current = _uiState.value
+        if (current is EditDayUiState.Editing) {
+            val updated = update(current)
+            val hasChanges = originalEntry?.let { orig ->
+                updated.status != orig.status ||
+                updated.stravaId != (orig.stravaId ?: "") ||
+                updated.content != orig.content ||
+                updated.newPhotos.isNotEmpty()
+            } ?: false
+            _uiState.value = updated.copy(hasChanges = hasChanges)
+        }
+    }
+
+    fun submit(context: Context) {
+        val current = _uiState.value
+        if (current !is EditDayUiState.Editing) return
+
+        viewModelScope.launch {
+            _uiState.value = EditDayUiState.Submitting("Updating day entry...")
+
+            val updatedEntry = current.dayEntry.copy(
+                status = current.status,
+                stravaId = current.stravaId.ifEmpty { null },
+                content = current.content
+            )
+
+            repository.updateDayEntry(updatedEntry, current.newPhotos, context)
+                .onSuccess { result ->
+                    _uiState.value = EditDayUiState.Success(result)
+                }
+                .onFailure { e ->
+                    _uiState.value = EditDayUiState.Error(e.message ?: "Failed to create PR")
+                }
+        }
+    }
+}
+
+sealed class EditDayUiState {
+    object Loading : EditDayUiState()
+    data class Editing(
+        val dayEntry: DayEntry,
+        val status: String,
+        val stravaId: String,
+        val content: String,
+        val newPhotos: List<Uri>,
+        val hasChanges: Boolean
+    ) : EditDayUiState()
+    data class Submitting(val message: String) : EditDayUiState()
+    data class Success(val result: SubmissionResult) : EditDayUiState()
+    data class Error(val message: String) : EditDayUiState()
 }
 ```
 
@@ -1325,16 +1608,16 @@ india-2026/
 │   │   │       │   │   └── DayEntry.kt
 │   │   │       │   ├── ui/
 │   │   │       │   │   ├── screens/
-│   │   │       │   │   │   ├── CreateEntryScreen.kt
+│   │   │       │   │   │   ├── DayListScreen.kt
+│   │   │       │   │   │   ├── EditDayScreen.kt
 │   │   │       │   │   │   └── ResultScreen.kt
 │   │   │       │   │   ├── composables/
-│   │   │       │   │   │   ├── PhotoPicker.kt
-│   │   │       │   │   │   ├── GpxPicker.kt
-│   │   │       │   │   │   └── DatePickerField.kt
+│   │   │       │   │   │   └── PhotoPicker.kt
 │   │   │       │   │   └── theme/
 │   │   │       │   │       └── Theme.kt
 │   │   │       │   ├── viewmodel/
-│   │   │       │   │   ├── CreateEntryViewModel.kt
+│   │   │       │   │   ├── DayListViewModel.kt
+│   │   │       │   │   ├── EditDayViewModel.kt
 │   │   │       │   │   └── ResultViewModel.kt
 │   │   │       │   └── MainActivity.kt
 │   │   │       ├── res/
@@ -1385,11 +1668,10 @@ The token is injected into the build at compile time and hardcoded into the APK 
 
 This Android app provides a streamlined way to update the India 2026 cycle tour website directly from a phone. Key features:
 
-1. **Simple form-based entry** - No need to understand Git or markdown formatting
+1. **Edit existing days** - Select from pre-configured day entries and update status, Strava ID, and content
 2. **Native photo picker** - Select multiple photos from gallery with automatic compression
-3. **GPX support** - Attach route files from cycling apps
-4. **GitHub integration** - Automatic branch creation and PR submission
-5. **Preview links** - Direct access to PR and Amplify preview URLs
-6. **Automated builds** - GitHub Actions compiles APK on every push
+3. **GitHub integration** - Automatic branch creation and PR submission
+4. **Preview links** - Direct access to PR and Amplify preview URLs
+5. **Automated builds** - GitHub Actions compiles APK on every push
 
-The app is designed for single-user private use, with minimal overhead and maximum convenience for updating the site while traveling.
+The app is designed for single-user private use, with minimal overhead and maximum convenience for updating the site while traveling. Day entries (title, date, distance, location) are pre-configured in the repository - the app only edits existing days, it does not create new ones.
