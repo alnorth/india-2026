@@ -29,10 +29,11 @@ india-2026/
 │   ├── layouts/                  # Page layouts
 │   │   └── BaseLayout.astro      # Root layout (wrapper for all pages)
 │   │
-│   ├── components/               # React components (interactive)
+│   ├── components/               # React & Astro components
 │   │   ├── GPXMap.tsx            # Client component wrapper for GPX map
 │   │   ├── MapComponent.tsx      # Client component for Leaflet map
-│   │   ├── PhotoGallery.tsx      # Photo grid with lightbox
+│   │   ├── PhotoGalleryOptimized.astro  # Photo gallery with Sharp optimization
+│   │   ├── PhotoLightbox.tsx     # Lightbox modal for photo viewing
 │   │   └── StravaEmbed.tsx       # Strava activity iframe embed
 │   │
 │   ├── lib/                      # Utility functions
@@ -129,15 +130,31 @@ india-2026/
   - Requires embed token (user must add after getting from Strava)
   - Falls back to activity link if no token
 
-#### `src/components/PhotoGallery.tsx`
+#### `src/components/PhotoGalleryOptimized.astro`
+- **Type**: Astro Component (with embedded React component)
+- **Purpose**: Photo gallery with automatic image optimization
+- **Props**: `slug` (day slug to locate photos)
+- **Implementation**:
+  - Reads photos from `content/days/{slug}/photos/` directory at build time
+  - Uses Sharp to generate optimized WebP versions:
+    - 400x400px thumbnails for grid (80% quality)
+    - Max 1920px full-size for lightbox (85% quality)
+  - Saves optimized images to `dist/_images/{slug}/`
+  - Renders responsive grid layout with Tailwind CSS
+  - Includes PhotoLightbox component for full-screen viewing
+- **Why Astro Component**: Needs file system access at build time for image processing
+
+#### `src/components/PhotoLightbox.tsx`
 - **Type**: React Client Component
-- **Purpose**: Photo grid with lightbox view
+- **Purpose**: Full-screen lightbox modal for photo viewing
 - **Props**: `photos` (array of photo URLs)
 - **Implementation**:
-  - Grid layout using Tailwind CSS
-  - Click to view full-size in modal overlay
-  - Keyboard navigation (ESC to close, arrow keys to navigate)
+  - Modal overlay with black background
+  - Click to close, or use ESC key
+  - Navigate with arrow keys or on-screen buttons
+  - Listens for custom events to open specific photos
   - State management with React hooks
+- **Why Client Component**: Needs browser APIs (event listeners, keyboard input)
 
 ## Data Layer
 
@@ -238,7 +255,7 @@ Converted to HTML with `marked` library.
 The site uses Astro's client directives to control when React components load:
 
 - `client:load` - Hydrate component immediately on page load
-  - Used for: GPXMap, PhotoGallery, StravaEmbed
+  - Used for: GPXMap, PhotoLightbox, StravaEmbed
   - Best for: Components that need to be interactive immediately
 
 Other available directives (not currently used):
@@ -369,12 +386,19 @@ AWS Amplify provides built-in GitHub integration:
 
 ### Image Optimization
 
-- Currently uses standard `<img>` tags
-- **Future improvement**: Use Astro's `<Image>` component for:
-  - Automatic optimization
-  - Responsive sizes
-  - Lazy loading
-  - WebP conversion
+- **Automatic optimization enabled**: Photos are automatically optimized at build time using Sharp
+- **How it works**:
+  - Original photos (from phone, camera, etc.) are placed in `content/days/{slug}/photos/`
+  - During build, Sharp generates two optimized versions:
+    - **Thumbnail**: 400x400px WebP at 80% quality for gallery grid
+    - **Full-size**: Max 1920px WebP at 85% quality for lightbox view
+  - Optimized images saved to `dist/_images/{slug}/`
+  - Typically reduces file sizes by 70-90%
+- **Benefits**:
+  - Fast page loads even with large phone photos (3-10MB originals → ~100-500KB optimized)
+  - Automatic WebP conversion for modern browsers
+  - Lazy loading for improved performance
+  - No manual image processing required - just drop photos into the photos folder
 
 ### GPX File Size
 
