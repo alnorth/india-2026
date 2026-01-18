@@ -1,10 +1,8 @@
-'use client'
-
 interface StravaEmbedProps {
   activityId: string
 }
 
-export function StravaEmbed({ activityId }: StravaEmbedProps) {
+export default function StravaEmbed({ activityId }: StravaEmbedProps) {
   return (
     <div className="w-full">
       <iframe

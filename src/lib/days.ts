@@ -21,7 +21,7 @@ export interface Day extends DayMetadata {
   photos?: string[]
 }
 
-export async function getAllDays(): Promise<Day[]> {
+export function getAllDays(): Day[] {
   // Check if directory exists
   if (!fs.existsSync(daysDirectory)) {
     return []
@@ -34,7 +34,7 @@ export async function getAllDays(): Promise<Day[]> {
       return fs.statSync(dayPath).isDirectory()
     })
     .map((folder) => {
-      return getDayBySlugSync(folder)
+      return getDayBySlug(folder)
     })
     .filter((day): day is Day => day !== null)
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
@@ -42,11 +42,7 @@ export async function getAllDays(): Promise<Day[]> {
   return days
 }
 
-export async function getDayBySlug(slug: string): Promise<Day | null> {
-  return getDayBySlugSync(slug)
-}
-
-function getDayBySlugSync(slug: string): Day | null {
+export function getDayBySlug(slug: string): Day | null {
   const dayPath = path.join(daysDirectory, slug)
 
   if (!fs.existsSync(dayPath)) {
@@ -85,4 +81,17 @@ function getDayBySlugSync(slug: string): Day | null {
     gpxPath: hasGpx ? `/content/days/${slug}/route.gpx` : undefined,
     photos: photos.length > 0 ? photos : undefined,
   }
+}
+
+export function getAllSlugs(): string[] {
+  if (!fs.existsSync(daysDirectory)) {
+    return []
+  }
+
+  return fs
+    .readdirSync(daysDirectory)
+    .filter((folder) => {
+      const dayPath = path.join(daysDirectory, folder)
+      return fs.statSync(dayPath).isDirectory()
+    })
 }
