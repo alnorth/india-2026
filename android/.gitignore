@@ -33,6 +33,8 @@ out/
 # Keystore files
 *.jks
 *.keystore
+keystore.properties
+keystore-base64.txt
 
 # Lint
 lint/
