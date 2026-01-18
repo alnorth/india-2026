@@ -6,7 +6,7 @@ frontend:
         - npm ci
     build:
       commands:
-        - npm run build
+        - env AMPLIFY_NEXTJS_EXPERIMENTAL_TRACE=false npm run build
   artifacts:
     baseDirectory: out
     files:
@@ -15,4 +15,5 @@ frontend:
     paths:
       - node_modules/**/*
       - .next/cache/**/*
-platform: WEB
+  buildSettings:
+    outputPathOverride: out
