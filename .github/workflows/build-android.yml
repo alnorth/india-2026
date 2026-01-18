@@ -37,7 +37,7 @@ jobs:
       - name: Create keystore.properties
         run: |
           cat > android/keystore.properties << EOF
-          storeFile=upload-keystore.jks
+          storeFile=../upload-keystore.jks
           storePassword=${{ secrets.KEY_STORE_PASSWORD }}
           keyAlias=${{ secrets.KEY_ALIAS }}
           keyPassword=${{ secrets.KEY_PASSWORD }}
