@@ -497,6 +497,24 @@ npm run preview
 2. For global changes, edit `src/styles/globals.css`
 3. For theme colors, edit `tailwind.config.js`
 
+### Updating Documentation
+
+**IMPORTANT**: When making changes to the codebase, always update both documentation files:
+
+1. **CLAUDE.md** (this file) - Technical documentation
+   - Update component descriptions
+   - Document new interfaces/types
+   - Add to "Recent Additions" section
+   - Update architecture diagrams if needed
+
+2. **README.md** - User guide
+   - Update examples if user-facing changes
+   - Add new frontmatter fields to examples
+   - Update usage instructions
+   - Keep file paths current
+
+Both files should stay in sync with the actual codebase. Out-of-date documentation can be more harmful than no documentation.
+
 ## Troubleshooting
 
 ### Map Not Showing
