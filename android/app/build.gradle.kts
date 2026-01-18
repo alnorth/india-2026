@@ -1,3 +1,6 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -20,10 +23,12 @@ android {
         }
 
         // Load token from local.properties
-        val localProperties = java.util.Properties()
+        val localProperties = Properties()
         val localPropertiesFile = rootProject.file("local.properties")
         if (localPropertiesFile.exists()) {
-            localProperties.load(localPropertiesFile.inputStream())
+            FileInputStream(localPropertiesFile).use { stream ->
+                localProperties.load(stream)
+            }
         }
 
         buildConfigField(
