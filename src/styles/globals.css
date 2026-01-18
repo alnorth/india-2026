@@ -3,16 +3,18 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
+  /* Warm earthy tones for light mode */
+  --foreground-rgb: 42, 33, 22; /* earth-900 */
+  --background-start-rgb: 250, 248, 245; /* sand-50 */
+  --background-end-rgb: 240, 235, 227; /* sand-100 */
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
+    /* Rich earth tones for dark mode */
+    --foreground-rgb: 240, 235, 227; /* sand-100 */
+    --background-start-rgb: 42, 33, 22; /* earth-900 */
+    --background-end-rgb: 63, 50, 33; /* earth-800 */
   }
 }
 
