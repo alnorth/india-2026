@@ -140,16 +140,20 @@ india-2026/
 - **Token**: Hardcoded in app (single-user private app)
 
 ### Build & Distribution
-- APK built via GitHub Actions (triggered by changes in `android/`)
-- Artifact available for download from workflow runs
+- APK built **exclusively** via GitHub Actions
+- Triggered automatically by changes in `android/` directory
+- Can also be triggered manually via "Run workflow" button
+- Artifacts available for download from workflow runs
+- No local builds or Android Studio required
 - No Play Store distribution (private app)
 
 ## Security Considerations
 
 1. **GitHub Token**
-   - Hardcoded in BuildConfig (not committed to public repo)
-   - Token stored in `local.properties` (gitignored)
-   - Injected at build time via Gradle
+   - Fine-grained token with repository-specific scope
+   - Stored as GitHub Actions secret (never committed to repo)
+   - Injected at build time via Gradle BuildConfig
+   - Token is hardcoded into APK (acceptable for private personal use)
 
 2. **No Analytics**
    - No tracking or data collection
@@ -1786,32 +1790,70 @@ india-2026/
 
 ## Step 12: Token Setup
 
-### 12.1 Create GitHub Personal Access Token
+### 12.1 Create GitHub Fine-Grained Personal Access Token
 
-1. Go to GitHub Settings > Developer settings > Personal access tokens > Fine-grained tokens
-2. Create new token with:
-   - Repository access: `alnorth/india-2026`
-   - Permissions:
-     - Contents: Read and write
-     - Pull requests: Read and write
-     - Metadata: Read-only
-3. Copy the token
+We use GitHub's **new fine-grained tokens** (not the older classic tokens) for better security and repository-specific scoping.
 
-### 12.2 Configure Local Development
+**Detailed Steps:**
 
-Add the token to `android/local.properties`:
+1. **Navigate to Token Settings**
+   - Go to GitHub.com and click your profile picture (top right)
+   - Click **Settings**
+   - Scroll down to **Developer settings** (bottom of left sidebar)
+   - Click **Personal access tokens**
+   - Click **Fine-grained tokens** (NOT "Tokens (classic)")
 
-```properties
-GITHUB_TOKEN=ghp_your_token_here
-```
+2. **Generate New Token**
+   - Click **Generate new token** button
+   - You may be asked to confirm your password
 
-This file is gitignored and won't be committed.
+3. **Configure Token Details**
+   - **Token name**: `India 2026 Android App`
+   - **Expiration**: Choose expiration period (recommended: 90 days or 1 year)
+   - **Description** (optional): `Token for India 2026 Android app to create PRs and upload photos`
+   - **Resource owner**: Select your account (`alnorth`)
 
-### 12.3 Configure GitHub Actions
+4. **Set Repository Access**
+   - Under **Repository access**, select **Only select repositories**
+   - Click the **Select repositories** dropdown
+   - Search for and select: `alnorth/india-2026`
 
-Add the token as a repository secret named `APP_GITHUB_TOKEN` (see Step 10.3).
+5. **Set Repository Permissions**
+   - Scroll down to **Permissions** section
+   - Under **Repository permissions**, find and configure:
+     - **Contents**: Select `Read and write` from dropdown
+     - **Pull requests**: Select `Read and write` from dropdown
+     - **Metadata**: Will be automatically set to `Read-only`
+   - Leave all other permissions as `No access`
 
-The token is injected into the build at compile time and hardcoded into the APK - this is acceptable since it's a private app for personal use only.
+6. **Generate and Copy Token**
+   - Scroll to bottom and click **Generate token**
+   - **IMPORTANT**: Copy the token immediately (starts with `github_pat_...`)
+   - Store it securely - you won't be able to see it again
+   - You'll need this token for the next step
+
+**Why Fine-Grained Tokens?**
+- Scoped to specific repositories (not all your repos)
+- Granular permission controls (only what the app needs)
+- Better security audit trail
+- Can be revoked independently without affecting other tokens
+
+### 12.2 Configure GitHub Actions Secret
+
+Add the token as a repository secret:
+
+1. Go to your repository on GitHub
+2. Click **Settings** tab
+3. In left sidebar, click **Secrets and variables** > **Actions**
+4. Click **New repository secret** button
+5. Configure the secret:
+   - **Name**: `APP_GITHUB_TOKEN`
+   - **Value**: Paste the token you copied in step 12.1
+6. Click **Add secret**
+
+The token is injected into the APK at build time via BuildConfig - this is acceptable since it's a private app for personal use only.
+
+**Note**: No local development setup is needed. All builds happen via GitHub Actions.
 
 ## Summary
 

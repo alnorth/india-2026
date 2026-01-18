@@ -13,82 +13,119 @@ A private Android app for updating the India 2026 cycle tour website while on th
 
 ## Prerequisites
 
-- Android Studio (latest version recommended)
-- JDK 17
-- GitHub Personal Access Token with `repo` permissions
-- Android device or emulator running Android 8.0 (API 26) or higher
+- Android device running Android 8.0 (API 26) or higher
+- GitHub Personal Access Token configured in repository secrets
+- APKs are built automatically via GitHub Actions
 
 ## Setup Instructions
 
-### 1. Create GitHub Personal Access Token
+### 1. Create GitHub Fine-Grained Personal Access Token
 
-1. Go to GitHub Settings > Developer settings > Personal access tokens > Fine-grained tokens
-2. Click "Generate new token"
-3. Configure:
-   - Repository access: `alnorth/india-2026`
-   - Permissions:
-     - Contents: Read and write
-     - Pull requests: Read and write
-     - Metadata: Read-only
-4. Copy the generated token
+We use GitHub's **new fine-grained tokens** (not the older classic tokens) for better security and tighter scoping.
 
-### 2. Configure Local Development
+**Detailed Steps:**
 
-Create a `local.properties` file in the `android/` directory:
+1. **Navigate to Token Settings**
+   - Go to GitHub.com and click your profile picture (top right)
+   - Click **Settings**
+   - Scroll down to **Developer settings** (bottom of left sidebar)
+   - Click **Personal access tokens**
+   - Click **Fine-grained tokens** (NOT "Tokens (classic)")
 
-```properties
-GITHUB_TOKEN=ghp_your_token_here
-```
+2. **Generate New Token**
+   - Click **Generate new token** button
+   - You may be asked to confirm your password
 
-**Important**: This file is gitignored and will not be committed.
+3. **Configure Token Details**
+   - **Token name**: `India 2026 Android App` (or any descriptive name)
+   - **Expiration**: Choose expiration (recommended: 90 days or 1 year)
+   - **Description** (optional): `Token for India 2026 Android app to create PRs and upload photos`
 
-### 3. Build the App
+4. **Set Repository Access**
+   - Under **Repository access**, select **Only select repositories**
+   - Click the **Select repositories** dropdown
+   - Search for and select: `alnorth/india-2026`
 
-#### Using Android Studio:
-1. Open the `android/` directory in Android Studio
-2. Wait for Gradle sync to complete
-3. Build > Make Project
-4. Run > Run 'app'
+5. **Set Repository Permissions**
+   - Scroll down to **Permissions** section
+   - Under **Repository permissions**, find and set:
+     - **Contents**: `Read and write` (dropdown)
+     - **Pull requests**: `Read and write` (dropdown)
+     - **Metadata**: `Read-only` (automatically set)
 
-#### Using Command Line:
-```bash
-cd android
-./gradlew assembleDebug
-```
+6. **Generate and Copy Token**
+   - Scroll to bottom and click **Generate token**
+   - **IMPORTANT**: Copy the token immediately (starts with `github_pat_...`)
+   - You won't be able to see it again!
+   - Store it securely - you'll need it in the next step
 
-The APK will be located at: `android/app/build/outputs/apk/debug/app-debug.apk`
+**Note**: Fine-grained tokens are more secure than classic tokens because they:
+- Can be scoped to specific repositories only
+- Have granular permission controls
+- Show up in repository security logs
+- Can be revoked per repository
 
-### 4. Install on Device
+### 2. Configure GitHub Actions
 
-#### Via Android Studio:
-- Connect your device via USB
-- Enable USB debugging on your device
-- Click Run in Android Studio
+Add the token as a repository secret:
 
-#### Via ADB:
-```bash
-adb install app/build/outputs/apk/debug/app-debug.apk
-```
+1. Go to Repository Settings > Secrets and variables > Actions
+2. Click "New repository secret"
+3. Name: `APP_GITHUB_TOKEN`
+4. Value: Your GitHub token from step 1
+5. Click "Add secret"
 
-## GitHub Actions CI/CD
+### 3. Build the App via GitHub Actions
 
-The repository includes a GitHub Actions workflow that automatically builds the APK when changes are pushed to the `android/` directory.
+The app is automatically built when changes are pushed to the `android/` directory:
 
-### Required GitHub Secrets
+1. Make changes to the Android app (or trigger workflow manually)
+2. Push to the repository
+3. GitHub Actions will build the APK automatically
+4. Download the APK from the workflow artifacts
 
-Add the following secret to your repository (Settings > Secrets and variables > Actions):
+### 4. Download and Install APK
 
-| Secret Name | Description |
-|-------------|-------------|
-| `APP_GITHUB_TOKEN` | GitHub Personal Access Token for API calls |
+1. Go to the **Actions** tab in GitHub
+2. Select the latest successful workflow run
+3. Scroll down to **Artifacts** section
+4. Download either:
+   - `debug-apk` - Debug build with logging
+   - `release-apk` - Release build (optimized)
+5. Extract the ZIP file
+6. Transfer the APK to your Android device
+7. Install the APK:
+   - You may need to enable "Install from Unknown Sources" in Android Settings
+   - Open the APK file to install
 
-### Downloading Built APKs
+## GitHub Actions Workflow
 
-1. Go to Actions tab in GitHub
-2. Select the latest workflow run
-3. Download artifacts:
-   - `debug-apk`: Debug build
-   - `release-apk`: Release build (unsigned)
+The repository includes a GitHub Actions workflow (`.github/workflows/build-android.yml`) that automatically builds the APK.
+
+### Workflow Triggers
+
+The workflow runs when:
+- Changes are pushed to the `android/` directory
+- Pull requests modify the `android/` directory
+- Manually triggered via "Run workflow" button in Actions tab
+
+### Build Outputs
+
+Each successful workflow run produces two artifacts:
+- **debug-apk**: Debug build with logging enabled
+- **release-apk**: Optimized release build
+
+### Manual Workflow Trigger
+
+To build the app without making changes:
+
+1. Go to **Actions** tab in GitHub
+2. Select **Build Android APK** workflow
+3. Click **Run workflow** dropdown
+4. Select branch (usually `master`)
+5. Click **Run workflow** button
+6. Wait for the build to complete (2-3 minutes)
+7. Download the APK from artifacts
 
 ## App Architecture
 
@@ -153,40 +190,49 @@ The app requires the following permissions:
 
 ## Security Considerations
 
-- **Hardcoded Token**: The GitHub token is hardcoded in the APK via BuildConfig. This is acceptable since it's a private app for personal use only.
+- **Hardcoded Token**: The GitHub token is injected into the APK at build time via BuildConfig. This is acceptable since it's a private app for personal use only.
 - **No Analytics**: The app does not collect any data or include analytics.
-- **Local Development**: The `local.properties` file containing the token is gitignored and never committed.
+- **Build-Time Injection**: The token is provided via GitHub Actions secrets and never committed to the repository.
 
 ## Troubleshooting
 
 ### Build fails with "GITHUB_TOKEN not found"
 
-Ensure you've created `android/local.properties` with your GitHub token.
+Ensure the `APP_GITHUB_TOKEN` secret is configured in GitHub repository settings (Settings > Secrets and variables > Actions).
 
 ### Photos not uploading
 
-Check that you've granted the app permission to access photos in Android Settings.
+Check that you've granted the app permission to access photos in Android Settings:
+- Settings > Apps > India 2026 Updater > Permissions > Photos
 
 ### API calls failing
 
-Verify your GitHub token has the correct permissions and hasn't expired.
+Verify your GitHub token:
+1. Has the correct permissions (Contents: Read/Write, Pull Requests: Read/Write)
+2. Hasn't expired
+3. Has access to the `alnorth/india-2026` repository
 
-### Gradle sync issues
+### GitHub Actions build fails
 
-Try:
-```bash
-./gradlew clean
-./gradlew build --refresh-dependencies
-```
+Check the workflow logs in the Actions tab:
+1. Go to Actions > Failed workflow run
+2. Click on the failed job
+3. Review the error logs
+4. Common issues:
+   - Missing `APP_GITHUB_TOKEN` secret
+   - Gradle dependency resolution failures
+   - Insufficient permissions on token
 
-## Development
+## Making Changes to the App
 
 To modify the app:
 
-1. Make changes to source files in `android/app/src/main/`
-2. Test locally using Android Studio
-3. Commit changes to the repository
-4. GitHub Actions will automatically build the APK
+1. Edit source files in `android/app/src/main/`
+2. Commit changes to the repository
+3. Push to GitHub
+4. GitHub Actions will automatically build and provide the updated APK
+5. Download the new APK from workflow artifacts
+6. Install on your device
 
 ## License
 
