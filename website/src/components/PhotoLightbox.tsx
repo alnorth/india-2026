@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react'
 
 interface PhotoLightboxProps {
   photos: string[]
+  captions?: (string | undefined)[]
 }
 
-export default function PhotoLightbox({ photos }: PhotoLightboxProps) {
+export default function PhotoLightbox({ photos, captions }: PhotoLightboxProps) {
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null)
   const [selectedIndex, setSelectedIndex] = useState<number>(0)
 
@@ -84,13 +85,18 @@ export default function PhotoLightbox({ photos }: PhotoLightboxProps) {
       >
         ›
       </button>
-      <div className="relative max-w-7xl max-h-full w-full h-full flex items-center justify-center">
+      <div className="relative max-w-7xl max-h-full w-full h-full flex flex-col items-center justify-center px-16">
         <img
           src={selectedPhoto}
           alt="Selected photo"
           className="max-w-full max-h-full object-contain"
           onClick={(e) => e.stopPropagation()}
         />
+        {captions && captions[selectedIndex] && (
+          <p className="text-white text-center mt-4 text-lg max-w-3xl">
+            {captions[selectedIndex]}
+          </p>
+        )}
       </div>
     </div>
   )

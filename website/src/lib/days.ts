@@ -6,6 +6,12 @@ import { parseGPXServer, calculateGPXStats, type GPXStats } from './gpxServerUti
 
 const daysDirectory = path.join(process.cwd(), 'content/days')
 
+export interface PhotoMetadata {
+  file: string
+  caption?: string
+  alt?: string
+}
+
 export interface DayMetadata {
   date: string
   title: string
@@ -13,6 +19,7 @@ export interface DayMetadata {
   location?: string
   status: 'planned' | 'in-progress' | 'completed'
   stravaId?: string
+  photos?: PhotoMetadata[]
 }
 
 export interface Day extends DayMetadata {
@@ -20,6 +27,7 @@ export interface Day extends DayMetadata {
   content: string
   gpxPath?: string
   photos?: string[]
+  photoMetadata?: Map<string, PhotoMetadata>
   gpxStats?: GPXStats
 }
 
@@ -87,12 +95,23 @@ export function getDayBySlug(slug: string): Day | null {
       .map((file) => `/content/days/${slug}/photos/${file}`)
   }
 
+  // Create photo metadata map from frontmatter
+  let photoMetadata: Map<string, PhotoMetadata> | undefined
+  const metadata = data as DayMetadata
+  if (metadata.photos && metadata.photos.length > 0) {
+    photoMetadata = new Map()
+    metadata.photos.forEach((photoMeta) => {
+      photoMetadata!.set(photoMeta.file, photoMeta)
+    })
+  }
+
   return {
     slug,
     ...(data as DayMetadata),
     content: htmlContent as string,
     gpxPath: hasGpx ? `/content/days/${slug}/route.gpx` : undefined,
     photos: photos.length > 0 ? photos : undefined,
+    photoMetadata,
     gpxStats,
   }
 }
