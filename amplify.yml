@@ -1,18 +1,21 @@
 version: 1
-frontend:
-  phases:
-    preBuild:
-      commands:
-        - npm ci
-    build:
-      commands:
-        - npm run build
-  artifacts:
-    baseDirectory: dist
-    files:
-      - '**/*'
-  cache:
-    paths:
-      - node_modules/**/*
-      - .astro/**/*
+applications:
+  - frontend:
+      phases:
+        preBuild:
+          commands:
+            - cd website
+            - npm ci
+        build:
+          commands:
+            - npm run build
+      artifacts:
+        baseDirectory: website/dist
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - website/node_modules/**/*
+          - website/.astro/**/*
+    appRoot: website
 platform: WEB

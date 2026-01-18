@@ -19,44 +19,51 @@ This is a **statically generated site** built with Astro. The site reads content
 ## Directory Structure
 
 ```
-india-2026/
-├── src/                          # Astro source files
-│   ├── pages/                    # Astro pages (routes)
-│   │   ├── index.astro           # Home page (listing all days)
-│   │   └── day/
-│   │       └── [slug].astro      # Dynamic route for individual day pages
+india-2026/                       # Monorepo root
+├── website/                      # Website project
+│   ├── src/                      # Astro source files
+│   │   ├── pages/                # Astro pages (routes)
+│   │   │   ├── index.astro       # Home page (listing all days)
+│   │   │   └── day/
+│   │   │       └── [slug].astro  # Dynamic route for individual day pages
+│   │   │
+│   │   ├── layouts/              # Page layouts
+│   │   │   └── BaseLayout.astro  # Root layout (wrapper for all pages)
+│   │   │
+│   │   ├── components/           # React & Astro components
+│   │   │   ├── GPXMap.tsx        # Client component wrapper for GPX map
+│   │   │   ├── MapComponent.tsx  # Client component for Leaflet map
+│   │   │   ├── PhotoGalleryOptimized.astro  # Photo gallery with Sharp optimization
+│   │   │   ├── PhotoLightbox.tsx # Lightbox modal for photo viewing
+│   │   │   └── StravaEmbed.tsx   # Strava activity iframe embed
+│   │   │
+│   │   ├── lib/                  # Utility functions
+│   │   │   └── days.ts           # Functions to read/parse day content
+│   │   │
+│   │   └── styles/               # Global styles
+│   │       └── globals.css       # Tailwind directives and global CSS
 │   │
-│   ├── layouts/                  # Page layouts
-│   │   └── BaseLayout.astro      # Root layout (wrapper for all pages)
+│   ├── content/                  # Content files (not in public/)
+│   │   └── days/                 # Daily ride content
+│   │       └── [day-slug]/       # Each day in its own directory
+│   │           ├── index.md      # Frontmatter + markdown content
+│   │           ├── route.gpx     # GPX file for route
+│   │           └── photos/       # Photos for the day
 │   │
-│   ├── components/               # React & Astro components
-│   │   ├── GPXMap.tsx            # Client component wrapper for GPX map
-│   │   ├── MapComponent.tsx      # Client component for Leaflet map
-│   │   ├── PhotoGalleryOptimized.astro  # Photo gallery with Sharp optimization
-│   │   ├── PhotoLightbox.tsx     # Lightbox modal for photo viewing
-│   │   └── StravaEmbed.tsx       # Strava activity iframe embed
+│   ├── public/                   # Static files served as-is
 │   │
-│   ├── lib/                      # Utility functions
-│   │   └── days.ts               # Functions to read/parse day content
-│   │
-│   └── styles/                   # Global styles
-│       └── globals.css           # Tailwind directives and global CSS
+│   ├── astro.config.mjs          # Astro configuration
+│   ├── package.json              # Dependencies
+│   ├── tailwind.config.js        # Tailwind CSS configuration
+│   ├── tsconfig.json             # TypeScript configuration
+│   ├── CLAUDE.md                 # This file - technical documentation
+│   └── README.md                 # Website user guide
 │
-├── content/                      # Content files (not in public/)
-│   └── days/                     # Daily ride content
-│       └── [day-slug]/           # Each day in its own directory
-│           ├── index.md          # Frontmatter + markdown content
-│           ├── route.gpx         # GPX file for route
-│           └── photos/           # Photos for the day
-│
-├── public/                       # Static files served as-is
-│
-├── amplify.yml                   # AWS Amplify build configuration
-├── astro.config.mjs              # Astro configuration
-├── package.json                  # Dependencies
-├── tailwind.config.js            # Tailwind CSS configuration
-└── tsconfig.json                 # TypeScript configuration
+├── amplify.yml                   # AWS Amplify build configuration (at root)
+└── README.md                     # Monorepo overview
 ```
+
+**Note**: This is now a monorepo structure. All website-specific files are in the `website/` subdirectory. The root level is prepared for future addition of an Android app.
 
 ## Component Architecture
 
@@ -267,12 +274,12 @@ Other available directives (not currently used):
 
 ### Build Process
 
-Defined in `amplify.yml`:
+Defined in `amplify.yml` (located at repository root):
 
-1. **Pre-build**: `npm ci` (clean install)
-2. **Build**: `npm run build` (Astro static export)
-3. **Output**: `dist/` directory
-4. **Base directory**: `/` (project root)
+1. **App root**: `website/` (monorepo subdirectory)
+2. **Pre-build**: `cd website && npm ci` (clean install in website directory)
+3. **Build**: `npm run build` (Astro static export)
+4. **Output**: `website/dist/` directory
 
 ### Automatic Deployments
 
@@ -422,6 +429,9 @@ AWS Amplify provides built-in GitHub integration:
 ## Testing Locally
 
 ```bash
+# Navigate to website directory
+cd website
+
 # Install dependencies
 npm install
 
