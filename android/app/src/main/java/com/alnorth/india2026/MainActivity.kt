@@ -37,7 +37,30 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    MainContent()
+                    // Temporary minimal UI for testing
+                    androidx.compose.foundation.layout.Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = androidx.compose.ui.Alignment.Center
+                    ) {
+                        androidx.compose.foundation.layout.Column(
+                            horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
+                            verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(16.dp)
+                        ) {
+                            androidx.compose.material3.Text(
+                                "India 2026 App",
+                                style = MaterialTheme.typography.headlineMedium
+                            )
+                            androidx.compose.material3.Text(
+                                "Minimal test version",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            androidx.compose.material3.Text(
+                                "If you see this, the app is working!",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
                 }
             }
         }
