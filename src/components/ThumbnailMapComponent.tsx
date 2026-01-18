@@ -50,7 +50,7 @@ export default function ThumbnailMapComponent({ gpxData }: ThumbnailMapComponent
       />
       {coordinates.length > 0 && (
         <>
-          <Polyline positions={coordinates} color="#3b82f6" weight={3} />
+          <Polyline positions={coordinates} color="#38824f" weight={3} />
           <FitBounds coordinates={coordinates} />
         </>
       )}

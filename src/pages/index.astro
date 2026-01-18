@@ -12,7 +12,7 @@ const days = getAllDays();
   <div>
     <div class="mb-8">
       <h2 class="text-2xl font-bold mb-4">Journey Overview</h2>
-      <p class="text-gray-700 dark:text-gray-300">
+      <p class="text-sand-700 dark:text-sand-300">
         Follow along as I cycle from coast to coast across southern India.
         Each day includes the planned route, ride details, and stories from the road.
       </p>
@@ -22,7 +22,7 @@ const days = getAllDays();
       {days.map((day) => (
         <a
           href={`/day/${day.slug}/`}
-          class="block bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden"
+          class="block bg-sand-50 dark:bg-earth-800 rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden"
         >
           {/* Route Thumbnail */}
           {day.gpxPath && (
@@ -35,51 +35,51 @@ const days = getAllDays();
             <div class="flex justify-between items-start mb-2">
               <h3 class="text-xl font-semibold">{day.title}</h3>
               <span class={`px-2 py-1 text-xs rounded flex-shrink-0 ml-2 ${
-                day.status === 'completed' ? 'bg-green-100 text-green-800' :
-                day.status === 'in-progress' ? 'bg-yellow-100 text-yellow-800' :
-                'bg-gray-100 text-gray-800'
+                day.status === 'completed' ? 'bg-forest-100 text-forest-800' :
+                day.status === 'in-progress' ? 'bg-saffron-100 text-saffron-800' :
+                'bg-sand-200 text-sand-800'
               }`}>
                 {day.status}
               </span>
             </div>
 
-            <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
+            <p class="text-sm text-sand-600 dark:text-sand-400 mb-3">
               {format(new Date(day.date), 'EEEE, MMMM d, yyyy')}
             </p>
 
             {day.location && (
-              <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
+              <p class="text-sm text-sand-600 dark:text-sand-400 mb-3">
                 {day.location}
               </p>
             )}
 
             {/* Stats from GPX */}
             {day.gpxStats && (
-              <div class="grid grid-cols-3 gap-2 text-sm border-t pt-3 dark:border-gray-700">
+              <div class="grid grid-cols-3 gap-2 text-sm border-t border-sand-300 pt-3 dark:border-earth-700">
                 <div>
-                  <div class="text-gray-500 dark:text-gray-400 text-xs">Distance</div>
-                  <div class="font-semibold text-gray-900 dark:text-gray-100">
+                  <div class="text-sand-500 dark:text-sand-400 text-xs">Distance</div>
+                  <div class="font-semibold text-earth-900 dark:text-sand-100">
                     {day.gpxStats.distance} km
                   </div>
-                  <div class="text-xs text-gray-500 dark:text-gray-400">
+                  <div class="text-xs text-sand-500 dark:text-sand-400">
                     {kmToMiles(day.gpxStats.distance)} mi
                   </div>
                 </div>
                 <div>
-                  <div class="text-gray-500 dark:text-gray-400 text-xs">Elevation ↑</div>
-                  <div class="font-semibold text-gray-900 dark:text-gray-100">
+                  <div class="text-sand-500 dark:text-sand-400 text-xs">Elevation ↑</div>
+                  <div class="font-semibold text-earth-900 dark:text-sand-100">
                     {day.gpxStats.elevationGain} m
                   </div>
-                  <div class="text-xs text-gray-500 dark:text-gray-400">
+                  <div class="text-xs text-sand-500 dark:text-sand-400">
                     {metersToFeet(day.gpxStats.elevationGain)} ft
                   </div>
                 </div>
                 <div>
-                  <div class="text-gray-500 dark:text-gray-400 text-xs">Elevation ↓</div>
-                  <div class="font-semibold text-gray-900 dark:text-gray-100">
+                  <div class="text-sand-500 dark:text-sand-400 text-xs">Elevation ↓</div>
+                  <div class="font-semibold text-earth-900 dark:text-sand-100">
                     {day.gpxStats.elevationLoss} m
                   </div>
-                  <div class="text-xs text-gray-500 dark:text-gray-400">
+                  <div class="text-xs text-sand-500 dark:text-sand-400">
                     {metersToFeet(day.gpxStats.elevationLoss)} ft
                   </div>
                 </div>
@@ -91,7 +91,7 @@ const days = getAllDays();
     </div>
 
     {days.length === 0 && (
-      <div class="text-center py-12 text-gray-500">
+      <div class="text-center py-12 text-sand-500">
         <p>No days added yet. Check back soon!</p>
       </div>
     )}
