@@ -2,6 +2,7 @@
   "name": "india-2026-cycle-tour",
   "version": "0.1.0",
   "private": true,
+  "author": "Alasdair North",
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
