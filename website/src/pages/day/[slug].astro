@@ -1,0 +1,142 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { getAllSlugs, getDayBySlug } from '@/lib/days';
+import { format } from 'date-fns';
+import GPXMap from '@/components/GPXMap';
+import ElevationProfile from '@/components/ElevationProfile';
+import StravaEmbed from '@/components/StravaEmbed';
+import PhotoGalleryOptimized from '@/components/PhotoGalleryOptimized.astro';
+import { kmToMiles, metersToFeet } from '@/lib/unitConversions';
+
+export function getStaticPaths() {
+  const slugs = getAllSlugs();
+  return slugs.map((slug) => ({
+    params: { slug },
+  }));
+}
+
+const { slug } = Astro.params;
+const day = getDayBySlug(slug);
+
+if (!day) {
+  return Astro.redirect('/404');
+}
+---
+
+<BaseLayout title={`${day.title} - India 2026`}>
+  <div>
+    <a href="/" class="text-teal-600 hover:underline mb-4 inline-block">
+      ← Back to all days
+    </a>
+
+    <article class="max-w-4xl">
+      <header class="mb-8">
+        <h1 class="text-4xl font-bold mb-2">{day.title}</h1>
+        <div class="flex gap-4 text-sand-600 dark:text-sand-400">
+          <time datetime={day.date}>
+            {format(new Date(day.date), 'EEEE, MMMM d, yyyy')}
+          </time>
+          {day.distance && <span>{day.distance} km</span>}
+          {day.location && <span>{day.location}</span>}
+        </div>
+        <span class={`inline-block mt-2 px-3 py-1 text-sm rounded ${
+          day.status === 'completed' ? 'bg-forest-100 text-forest-800' :
+          day.status === 'in-progress' ? 'bg-saffron-100 text-saffron-800' :
+          'bg-sand-200 text-sand-800'
+        }`}>
+          {day.status}
+        </span>
+      </header>
+
+      {day.gpxPath && (
+        <section class="mb-8">
+          <h2 class="text-2xl font-bold mb-4">Route</h2>
+
+          {/* Route Stats */}
+          {day.gpxStats && (
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4 p-4 bg-sand-100 dark:bg-earth-800 rounded-lg">
+              <div>
+                <div class="text-sm text-sand-600 dark:text-sand-400">Distance</div>
+                <div class="text-xl font-bold text-earth-900 dark:text-sand-100">
+                  {day.gpxStats.distance} km
+                </div>
+                <div class="text-sm text-sand-500 dark:text-sand-400">
+                  {kmToMiles(day.gpxStats.distance)} mi
+                </div>
+              </div>
+              <div>
+                <div class="text-sm text-sand-600 dark:text-sand-400">Elevation Gain</div>
+                <div class="text-xl font-bold text-forest-600 dark:text-forest-400">
+                  ↑ {day.gpxStats.elevationGain} m
+                </div>
+                <div class="text-sm text-sand-500 dark:text-sand-400">
+                  {metersToFeet(day.gpxStats.elevationGain)} ft
+                </div>
+              </div>
+              <div>
+                <div class="text-sm text-sand-600 dark:text-sand-400">Elevation Loss</div>
+                <div class="text-xl font-bold text-terracotta-600 dark:text-terracotta-400">
+                  ↓ {day.gpxStats.elevationLoss} m
+                </div>
+                <div class="text-sm text-sand-500 dark:text-sand-400">
+                  {metersToFeet(day.gpxStats.elevationLoss)} ft
+                </div>
+              </div>
+              {day.gpxStats.minElevation !== undefined && (
+                <div>
+                  <div class="text-sm text-sand-600 dark:text-sand-400">Min Elevation</div>
+                  <div class="text-xl font-bold text-earth-900 dark:text-sand-100">
+                    {day.gpxStats.minElevation} m
+                  </div>
+                  <div class="text-sm text-sand-500 dark:text-sand-400">
+                    {metersToFeet(day.gpxStats.minElevation)} ft
+                  </div>
+                </div>
+              )}
+              {day.gpxStats.maxElevation !== undefined && (
+                <div>
+                  <div class="text-sm text-sand-600 dark:text-sand-400">Max Elevation</div>
+                  <div class="text-xl font-bold text-earth-900 dark:text-sand-100">
+                    {day.gpxStats.maxElevation} m
+                  </div>
+                  <div class="text-sm text-sand-500 dark:text-sand-400">
+                    {metersToFeet(day.gpxStats.maxElevation)} ft
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Route Map */}
+          <div class="h-96 rounded-lg overflow-hidden shadow-md mb-4">
+            <GPXMap client:load gpxPath={day.gpxPath} />
+          </div>
+
+          {/* Elevation Profile */}
+          <div class="mt-4">
+            <h3 class="text-xl font-semibold mb-3">Elevation Profile</h3>
+            <ElevationProfile client:load gpxPath={day.gpxPath} />
+          </div>
+        </section>
+      )}
+
+      {day.stravaId && (
+        <section class="mb-8">
+          <h2 class="text-2xl font-bold mb-4">Ride Stats</h2>
+          <StravaEmbed client:load activityId={day.stravaId} />
+        </section>
+      )}
+
+      <section class="mb-8 prose dark:prose-invert max-w-none">
+        <div set:html={day.content} />
+      </section>
+
+      {day.photos && day.photos.length > 0 && (
+        <section class="mb-8">
+          <h2 class="text-2xl font-bold mb-4">Photos</h2>
+          <PhotoGalleryOptimized slug={slug} />
+        </section>
+      )}
+    </article>
+  </div>
+</BaseLayout>

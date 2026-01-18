@@ -1,0 +1,132 @@
+---
+import PhotoLightbox from './PhotoLightbox';
+import fs from 'fs';
+import path from 'path';
+import sharp from 'sharp';
+import { getDayBySlug } from '../lib/days';
+
+interface Props {
+  slug: string;
+}
+
+const { slug } = Astro.props;
+
+// Get day data including photo metadata from frontmatter
+const dayData = getDayBySlug(slug);
+
+// Get photos from the day's photos directory
+const photosDir = path.join(process.cwd(), 'content', 'days', slug, 'photos');
+const optimizedDir = path.join(process.cwd(), 'dist', '_images', slug);
+let photoData: Array<{
+  thumbnail: string;
+  full: string;
+  filename: string;
+  width: number;
+  height: number;
+  caption?: string;
+  alt?: string;
+}> = [];
+
+if (fs.existsSync(photosDir)) {
+  // Ensure optimized directory exists
+  fs.mkdirSync(optimizedDir, { recursive: true });
+
+  const photoFiles = fs
+    .readdirSync(photosDir)
+    .filter((file) => /\.(jpg|jpeg|png|gif|webp)$/i.test(file))
+    .sort();
+
+  // Process images with Sharp
+  for (const filename of photoFiles) {
+    const photoPath = path.join(photosDir, filename);
+    const originalPublicPath = `/content/days/${slug}/photos/${filename}`;
+
+    // Get caption and alt text from frontmatter metadata
+    const photoMeta = dayData?.photoMetadata?.get(filename);
+
+    try {
+      // Read original image to get dimensions
+      const metadata = await sharp(photoPath).metadata();
+
+      // Generate thumbnail (400x400, WebP format)
+      const thumbnailFilename = `${path.parse(filename).name}-thumb.webp`;
+      const thumbnailPath = path.join(optimizedDir, thumbnailFilename);
+      const thumbnailPublicPath = `/_images/${slug}/${thumbnailFilename}`;
+
+      await sharp(photoPath)
+        .resize(400, 400, {
+          fit: 'cover',
+          position: 'center',
+        })
+        .webp({ quality: 80 })
+        .toFile(thumbnailPath);
+
+      // Generate full-size optimized version (max 1920px, WebP format)
+      const fullFilename = `${path.parse(filename).name}.webp`;
+      const fullPath = path.join(optimizedDir, fullFilename);
+      const fullPublicPath = `/_images/${slug}/${fullFilename}`;
+
+      await sharp(photoPath)
+        .resize(1920, 1920, {
+          fit: 'inside',
+          withoutEnlargement: true,
+        })
+        .webp({ quality: 85 })
+        .toFile(fullPath);
+
+      photoData.push({
+        thumbnail: thumbnailPublicPath,
+        full: fullPublicPath,
+        filename,
+        width: metadata.width || 400,
+        height: metadata.height || 400,
+        caption: photoMeta?.caption,
+        alt: photoMeta?.alt,
+      });
+    } catch (error) {
+      console.warn(`Could not optimize ${filename}:`, error);
+      // Fallback to original if optimization fails
+      photoData.push({
+        thumbnail: originalPublicPath,
+        full: originalPublicPath,
+        filename,
+        width: 400,
+        height: 400,
+        caption: photoMeta?.caption,
+        alt: photoMeta?.alt,
+      });
+    }
+  }
+}
+---
+
+{photoData.length > 0 && (
+  <div>
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="photo-gallery">
+      {photoData.map((photo, index) => (
+        <button
+          class="relative aspect-square overflow-hidden rounded-lg hover:opacity-90 transition-opacity cursor-pointer"
+          data-photo={photo.full}
+          data-index={index}
+          onclick={`window.dispatchEvent(new CustomEvent('openPhotoLightbox', { detail: { photo: '${photo.full}', index: ${index} }}))`}
+        >
+          <img
+            src={photo.thumbnail}
+            alt={photo.alt || photo.caption || `Photo ${index + 1}`}
+            width="400"
+            height="400"
+            loading="lazy"
+            decoding="async"
+            class="w-full h-full object-cover"
+          />
+        </button>
+      ))}
+    </div>
+
+    <PhotoLightbox
+      client:load
+      photos={photoData.map((photo) => photo.full)}
+      captions={photoData.map((photo) => photo.caption)}
+    />
+  </div>
+)}

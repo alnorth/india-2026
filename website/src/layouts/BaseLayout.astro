@@ -1,0 +1,40 @@
+---
+import '@/styles/globals.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = 'India 2026 - Coast to Coast Cycle Tour',
+  description = 'Following my coast to coast cycle tour across southern India'
+} = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  </head>
+  <body>
+    <header class="bg-terracotta-500 text-white py-6">
+      <div class="container mx-auto px-4">
+        <h1 class="text-3xl font-bold">India 2026</h1>
+        <p class="text-terracotta-100">Coast to Coast Cycle Tour</p>
+      </div>
+    </header>
+    <main class="container mx-auto px-4 py-8">
+      <slot />
+    </main>
+    <footer class="bg-earth-700 text-sand-100 py-6 mt-12">
+      <div class="container mx-auto px-4 text-center">
+        <p>&copy; 2026 Alasdair North</p>
+      </div>
+    </footer>
+  </body>
+</html>

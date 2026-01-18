@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Warm earthy tones for light mode */
+  --foreground-rgb: 42, 33, 22; /* earth-900 */
+  --background-start-rgb: 250, 248, 245; /* sand-50 */
+  --background-end-rgb: 240, 235, 227; /* sand-100 */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Rich earth tones for dark mode */
+    --foreground-rgb: 240, 235, 227; /* sand-100 */
+    --background-start-rgb: 42, 33, 22; /* earth-900 */
+    --background-end-rgb: 63, 50, 33; /* earth-800 */
+  }
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
+}
+
+/* Leaflet styles */
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
