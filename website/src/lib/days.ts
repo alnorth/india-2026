@@ -15,7 +15,6 @@ export interface PhotoMetadata {
 export interface DayMetadata {
   date: string
   title: string
-  distance?: number
   location?: string
   status: 'planned' | 'in-progress' | 'completed'
   stravaId?: string

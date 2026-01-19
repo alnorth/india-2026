@@ -36,7 +36,6 @@ if (!day) {
           <time datetime={day.date}>
             {format(new Date(day.date), 'EEEE, MMMM d, yyyy')}
           </time>
-          {day.distance && <span>{day.distance} km</span>}
           {day.location && <span>{day.location}</span>}
         </div>
         <span class={`inline-block mt-2 px-3 py-1 text-sm rounded ${
