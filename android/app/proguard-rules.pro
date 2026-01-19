@@ -27,10 +27,24 @@
 -keep class com.google.gson.internal.** { *; }
 -keep class com.google.gson.reflect.TypeToken { *; }
 -keep class * extends com.google.gson.reflect.TypeToken
+-keepclassmembers class com.google.gson.reflect.TypeToken { *; }
 
 # Keep generic signature for classes used with Gson (prevents ClassCastException)
 -keepattributes Signature
 -keep class com.google.gson.** { *; }
+
+# Prevent R8 from leaving Data object members always null
+-keepclassmembers,allowobfuscation class * {
+  @com.google.gson.annotations.SerializedName <fields>;
+}
+
+# Keep generic type information for collections
+-keep class java.util.** { *; }
+-keep interface java.util.** { *; }
+-keepclassmembers class * {
+    ** get*();
+    void set*(***);
+}
 
 # Keep our API models with all fields and signatures
 -keep class com.alnorth.india2026.api.** { *; }

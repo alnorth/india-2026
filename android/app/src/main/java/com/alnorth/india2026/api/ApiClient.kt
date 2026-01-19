@@ -2,6 +2,7 @@ package com.alnorth.india2026.api
 
 import com.alnorth.india2026.BuildConfig
 import com.alnorth.india2026.repository.GitHubRepository
+import com.google.gson.GsonBuilder
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -9,6 +10,12 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object ApiClient {
+    private val gson by lazy {
+        GsonBuilder()
+            .setLenient()
+            .create()
+    }
+
     private val okHttpClient by lazy {
         OkHttpClient.Builder()
             .addInterceptor { chain ->
@@ -45,7 +52,7 @@ object ApiClient {
         Retrofit.Builder()
             .baseUrl("https://api.github.com/")
             .client(okHttpClient)
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
     }
 
