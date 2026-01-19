@@ -60,25 +60,8 @@ fun MainContent() {
             }
         )
     } else {
-        // Step 2: Test with crash screen but simple UI
-        androidx.compose.foundation.layout.Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = androidx.compose.ui.Alignment.Center
-        ) {
-            androidx.compose.foundation.layout.Column(
-                horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
-                verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(16.dp)
-            ) {
-                androidx.compose.material3.Text(
-                    "India 2026 App",
-                    style = MaterialTheme.typography.headlineMedium
-                )
-                androidx.compose.material3.Text(
-                    "Step 2: Crash screen enabled",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
-        }
+        // Step 3: Test navigation without DayListScreen
+        India2026App()
     }
 }
 
@@ -91,13 +74,17 @@ fun India2026App() {
         navController = navController,
         startDestination = "day_list"
     ) {
-        // Day List Screen
+        // Day List Screen (testing without actual screen)
         composable("day_list") {
-            DayListScreen(
-                onDaySelected = { slug ->
-                    navController.navigate("edit_day/$slug")
-                }
-            )
+            androidx.compose.foundation.layout.Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = androidx.compose.ui.Alignment.Center
+            ) {
+                androidx.compose.material3.Text(
+                    "Step 3: Navigation works!",
+                    style = MaterialTheme.typography.headlineMedium
+                )
+            }
         }
 
         // Edit Day Screen
