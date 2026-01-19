@@ -51,7 +51,8 @@ class GitHubRepository(
     suspend fun updateDayEntry(
         dayEntry: DayEntry,
         newPhotos: List<SelectedPhoto>,
-        context: Context
+        context: Context,
+        onProgress: (current: Int, total: Int) -> Unit = { _, _ -> }
     ): Result<SubmissionResult> = runCatching {
 
         // 1. Get latest commit SHA from master
@@ -88,6 +89,7 @@ class GitHubRepository(
             )
 
             uploadedPhotos.add(PhotoWithCaption(filename, selectedPhoto.caption))
+            onProgress(index + 1, newPhotos.size)
         }
 
         // 4. Update markdown file with photo captions
@@ -129,7 +131,8 @@ class GitHubRepository(
         branchName: String,
         dayEntry: DayEntry,
         newPhotos: List<SelectedPhoto>,
-        context: Context
+        context: Context,
+        onProgress: (current: Int, total: Int) -> Unit = { _, _ -> }
     ): Result<SubmissionResult> = runCatching {
 
         // 1. Get the PR number for this branch
@@ -157,6 +160,7 @@ class GitHubRepository(
             )
 
             uploadedPhotos.add(PhotoWithCaption(filename, selectedPhoto.caption))
+            onProgress(index + 1, newPhotos.size)
         }
 
         // 3. Update markdown file with photo captions

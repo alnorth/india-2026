@@ -182,10 +182,31 @@ fun EditDayScreen(
                 ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier = Modifier.padding(32.dp)
                     ) {
-                        CircularProgressIndicator()
-                        Text(state.message)
+                        if (state.totalPhotos > 0) {
+                            // Show progress indicator when uploading photos
+                            Text(
+                                text = state.message,
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            LinearProgressIndicator(
+                                progress = { state.currentPhoto.toFloat() / state.totalPhotos.toFloat() },
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                text = "Photo ${state.currentPhoto} of ${state.totalPhotos}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.outline
+                            )
+                        } else {
+                            // Show spinner for other operations (creating branch, etc.)
+                            CircularProgressIndicator()
+                            Text(state.message)
+                        }
                     }
                 }
             }
@@ -388,13 +409,24 @@ class EditDayViewModel : ViewModel() {
 
                 if (existingBranchName != null) {
                     // Commit to existing PR branch
-                    _uiState.value = EditDayUiState.Submitting("Uploading photos...")
+                    _uiState.value = EditDayUiState.Submitting(
+                        "Uploading photos...",
+                        currentPhoto = 0,
+                        totalPhotos = current.newPhotos.size
+                    )
 
                     repository.commitToExistingBranch(
                         existingBranchName!!,
                         updatedEntry,
                         current.newPhotos,
-                        context
+                        context,
+                        onProgress = { currentPhoto, totalPhotos ->
+                            _uiState.value = EditDayUiState.Submitting(
+                                "Uploading photos...",
+                                currentPhoto = currentPhoto,
+                                totalPhotos = totalPhotos
+                            )
+                        }
                     )
                         .onSuccess { result ->
                             _uiState.value = EditDayUiState.Success(result)
@@ -407,9 +439,24 @@ class EditDayViewModel : ViewModel() {
                 } else {
                     // Create new PR
                     _uiState.value = EditDayUiState.Submitting("Creating branch...")
-                    _uiState.value = EditDayUiState.Submitting("Uploading photos...")
+                    _uiState.value = EditDayUiState.Submitting(
+                        "Uploading photos...",
+                        currentPhoto = 0,
+                        totalPhotos = current.newPhotos.size
+                    )
 
-                    repository.updateDayEntry(updatedEntry, current.newPhotos, context)
+                    repository.updateDayEntry(
+                        updatedEntry,
+                        current.newPhotos,
+                        context,
+                        onProgress = { currentPhoto, totalPhotos ->
+                            _uiState.value = EditDayUiState.Submitting(
+                                "Uploading photos...",
+                                currentPhoto = currentPhoto,
+                                totalPhotos = totalPhotos
+                            )
+                        }
+                    )
                         .onSuccess { result ->
                             _uiState.value = EditDayUiState.Success(result)
                         }
@@ -439,7 +486,11 @@ sealed class EditDayUiState {
         val editedExistingPhotos: List<PhotoWithCaption>,
         val hasChanges: Boolean
     ) : EditDayUiState()
-    data class Submitting(val message: String) : EditDayUiState()
+    data class Submitting(
+        val message: String,
+        val currentPhoto: Int = 0,
+        val totalPhotos: Int = 0
+    ) : EditDayUiState()
     data class Success(val result: SubmissionResult) : EditDayUiState()
     data class Error(val message: String) : EditDayUiState()
 }
