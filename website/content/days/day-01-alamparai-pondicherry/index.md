@@ -12,6 +12,8 @@ photos:
     caption: "yassss"
   - file: "photo-4.jpg"
     caption: "A test "
+  - file: "photo-5.jpg"
+    caption: ""
 ---
 
 ## Route
