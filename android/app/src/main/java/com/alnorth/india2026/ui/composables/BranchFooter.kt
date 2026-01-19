@@ -15,12 +15,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.alnorth.india2026.BuildConfig
+import com.alnorth.india2026.repository.UpdateInfo
 
 @Composable
 fun BranchFooter(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    updateInfo: UpdateInfo? = null
 ) {
     val context = LocalContext.current
     val branchName = BuildConfig.BRANCH_NAME
@@ -47,11 +53,33 @@ fun BranchFooter(
             .padding(start = 16.dp, top = 0.dp, end = 16.dp, bottom = 12.dp),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = "Built from: $branchName @ $commitSha",
-            style = MaterialTheme.typography.bodySmall,
-            color = textColor,
-            textAlign = TextAlign.Center
-        )
+        if (updateInfo != null) {
+            // Show update available with link
+            val annotatedText = buildAnnotatedString {
+                withStyle(style = SpanStyle(color = textColor)) {
+                    append("Built from: $branchName @ $commitSha  •  ")
+                }
+                withStyle(style = SpanStyle(color = Color.Blue, fontWeight = FontWeight.Bold)) {
+                    append("Update Available")
+                }
+            }
+
+            Text(
+                text = annotatedText,
+                style = MaterialTheme.typography.bodySmall,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.clickable {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(updateInfo.downloadUrl))
+                    context.startActivity(intent)
+                }
+            )
+        } else {
+            Text(
+                text = "Built from: $branchName @ $commitSha",
+                style = MaterialTheme.typography.bodySmall,
+                color = textColor,
+                textAlign = TextAlign.Center
+            )
+        }
     }
 }

@@ -250,6 +250,44 @@ class GitHubRepository(
         }
     }
 
+    // Check if a newer master build is available
+    suspend fun checkForUpdate(currentCommitSha: String): Result<UpdateInfo?> = runCatching {
+        val releases = api.getReleases(owner, repo, perPage = 10)
+
+        // Find the latest master build release (not prerelease)
+        val latestMasterRelease = releases
+            .filter { !it.prerelease && it.tag_name.startsWith("master-build-") }
+            .maxByOrNull { it.created_at }
+
+        if (latestMasterRelease == null) {
+            return@runCatching null
+        }
+
+        // Extract commit SHA from release body
+        val commitShaPattern = Regex("""Commit:\s*([a-f0-9]{40})""")
+        val matchResult = commitShaPattern.find(latestMasterRelease.body ?: "")
+        val releaseCommitSha = matchResult?.groupValues?.get(1)
+
+        if (releaseCommitSha == null) {
+            return@runCatching null
+        }
+
+        // Compare commit SHAs (compare full SHAs or first 7 chars)
+        val currentShort = currentCommitSha.take(7)
+        val releaseShort = releaseCommitSha.take(7)
+
+        if (currentShort != releaseShort && releaseCommitSha != currentCommitSha) {
+            UpdateInfo(
+                newVersion = latestMasterRelease.name,
+                commitSha = releaseShort,
+                downloadUrl = latestMasterRelease.html_url,
+                releaseNotesUrl = latestMasterRelease.html_url
+            )
+        } else {
+            null
+        }
+    }
+
     private fun readOriginalImage(context: Context, uri: Uri): ByteArray {
         val inputStream = context.contentResolver.openInputStream(uri)
             ?: throw IllegalArgumentException("Cannot open image URI")
@@ -378,3 +416,10 @@ class GitHubRepository(
         }
     }
 }
+
+data class UpdateInfo(
+    val newVersion: String,
+    val commitSha: String,
+    val downloadUrl: String,
+    val releaseNotesUrl: String
+)

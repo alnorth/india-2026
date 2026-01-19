@@ -88,4 +88,11 @@ interface GitHubApi {
         @Query("state") state: String = "open",
         @Query("per_page") perPage: Int = 100
     ): List<PullRequest>
+
+    @GET("repos/{owner}/{repo}/releases")
+    suspend fun getReleases(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Query("per_page") perPage: Int = 10
+    ): List<GitHubRelease>
 }

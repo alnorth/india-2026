@@ -19,7 +19,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.alnorth.india2026.api.ApiClient
 import com.alnorth.india2026.model.SubmissionResult
+import com.alnorth.india2026.repository.GitHubRepository
+import com.alnorth.india2026.repository.UpdateInfo
 import com.alnorth.india2026.ui.composables.BranchFooter
 import com.alnorth.india2026.ui.screens.CrashScreen
 import com.alnorth.india2026.ui.screens.DayListScreen
@@ -27,6 +30,7 @@ import com.alnorth.india2026.ui.screens.EditDayScreen
 import com.alnorth.india2026.ui.screens.PullRequestListScreen
 import com.alnorth.india2026.ui.screens.ResultScreen
 import com.alnorth.india2026.ui.theme.India2026Theme
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     companion object {
@@ -77,10 +81,27 @@ fun MainContent() {
 fun India2026App() {
     val navController = rememberNavController()
     var submissionResult: SubmissionResult? = null
+    var updateInfo by remember { mutableStateOf<UpdateInfo?>(null) }
+    val scope = rememberCoroutineScope()
+
+    // Check for updates on app start
+    LaunchedEffect(Unit) {
+        scope.launch {
+            try {
+                val repository = GitHubRepository(ApiClient.gitHubApi)
+                val result = repository.checkForUpdate(BuildConfig.COMMIT_SHA)
+                result.onSuccess { info ->
+                    updateInfo = info
+                }
+            } catch (e: Exception) {
+                Log.d("India2026App", "Failed to check for updates: ${e.message}")
+            }
+        }
+    }
 
     Scaffold(
         bottomBar = {
-            BranchFooter()
+            BranchFooter(updateInfo = updateInfo)
         }
     ) { paddingValues ->
         NavHost(
