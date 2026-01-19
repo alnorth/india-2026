@@ -288,7 +288,7 @@ class EditDayViewModel : ViewModel() {
                 // Access repository only after token check
                 val repository = ApiClient.repository
 
-                repository.getDayBySlug(slug)
+                repository.getDayBySlug(slug, branchName)
                     .onSuccess { entry ->
                         originalEntry = entry
                         _uiState.value = EditDayUiState.Editing(

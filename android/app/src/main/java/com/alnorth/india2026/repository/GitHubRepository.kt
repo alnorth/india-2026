@@ -36,8 +36,12 @@ class GitHubRepository(
     }
 
     // Fetch a specific day's full content
-    suspend fun getDayBySlug(slug: String): Result<DayEntry> = runCatching {
-        val indexContent = api.getFileContent(owner, repo, "website/content/days/$slug/index.md")
+    suspend fun getDayBySlug(slug: String, branchName: String? = null): Result<DayEntry> = runCatching {
+        val indexContent = if (branchName != null) {
+            api.getFileContent(owner, repo, "website/content/days/$slug/index.md", branchName)
+        } else {
+            api.getFileContent(owner, repo, "website/content/days/$slug/index.md")
+        }
         val markdown = String(Base64.decode(indexContent.content, Base64.DEFAULT))
         parseDayEntry(slug, markdown, indexContent.sha)
     }
