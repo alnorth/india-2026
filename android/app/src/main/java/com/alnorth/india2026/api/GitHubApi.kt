@@ -55,4 +55,19 @@ interface GitHubApi {
         @Path("repo") repo: String,
         @Path("pull_number") pullNumber: Int
     ): List<PullRequestComment>
+
+    @GET("repos/{owner}/{repo}/issues/{issue_number}/comments")
+    suspend fun getIssueComments(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Path("issue_number") issueNumber: Int
+    ): List<PullRequestComment>
+
+    @GET("repos/{owner}/{repo}/pulls")
+    suspend fun getPullRequests(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Query("state") state: String = "open",
+        @Query("per_page") perPage: Int = 100
+    ): List<PullRequest>
 }

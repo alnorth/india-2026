@@ -3,9 +3,8 @@ package com.alnorth.india2026.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CallSplit
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -17,35 +16,40 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.alnorth.india2026.api.ApiClient
-import com.alnorth.india2026.model.DaySummary
+import com.alnorth.india2026.api.PullRequest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DayListScreen(
-    viewModel: DayListViewModel = viewModel(),
-    onDaySelected: (String) -> Unit,
-    onViewPullRequests: () -> Unit
+fun PullRequestListScreen(
+    viewModel: PullRequestListViewModel = viewModel(),
+    onNavigateBack: () -> Unit,
+    onPullRequestSelected: (com.alnorth.india2026.model.SubmissionResult) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
     LaunchedEffect(Unit) {
-        viewModel.loadDays()
+        viewModel.loadPullRequests()
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("India 2026 - Select Day") },
-                actions = {
-                    IconButton(onClick = onViewPullRequests) {
-                        Icon(Icons.Default.CallSplit, contentDescription = "View Pull Requests")
+                title = { Text("Open Pull Requests") },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                    if (uiState is DayListUiState.Success) {
-                        IconButton(onClick = { viewModel.loadDays() }) {
+                },
+                actions = {
+                    if (uiState is PullRequestListUiState.Success) {
+                        IconButton(onClick = { viewModel.loadPullRequests() }) {
                             Icon(Icons.Default.Refresh, contentDescription = "Refresh")
                         }
                     }
@@ -54,7 +58,7 @@ fun DayListScreen(
         }
     ) { padding ->
         when (val state = uiState) {
-            is DayListUiState.Loading -> {
+            is PullRequestListUiState.Loading -> {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -66,24 +70,35 @@ fun DayListScreen(
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         CircularProgressIndicator()
-                        Text("Loading days from GitHub...")
+                        Text("Loading pull requests...")
                     }
                 }
             }
 
-            is DayListUiState.Success -> {
-                if (state.days.isEmpty()) {
+            is PullRequestListUiState.Success -> {
+                if (state.pullRequests.isEmpty()) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(padding),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            "No days found",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.outline
-                        )
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                "No open pull requests",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.outline
+                            )
+                            Text(
+                                "Pull requests created by the app will appear here",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.outline,
+                                textAlign = TextAlign.Center
+                            )
+                        }
                     }
                 } else {
                     LazyColumn(
@@ -93,17 +108,24 @@ fun DayListScreen(
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        items(state.days) { day ->
-                            DayCard(
-                                day = day,
-                                onClick = { onDaySelected(day.slug) }
+                        items(state.pullRequests) { pr ->
+                            PullRequestCard(
+                                pullRequest = pr,
+                                onClick = {
+                                    val submissionResult = com.alnorth.india2026.model.SubmissionResult(
+                                        prNumber = pr.number,
+                                        prUrl = pr.html_url,
+                                        branchName = pr.head.ref
+                                    )
+                                    onPullRequestSelected(submissionResult)
+                                }
                             )
                         }
                     }
                 }
             }
 
-            is DayListUiState.Error -> {
+            is PullRequestListUiState.Error -> {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -116,7 +138,7 @@ fun DayListScreen(
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         Text(
-                            "Error loading days",
+                            "Error loading pull requests",
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.error
                         )
@@ -126,7 +148,7 @@ fun DayListScreen(
                             color = MaterialTheme.colorScheme.outline,
                             textAlign = TextAlign.Center
                         )
-                        Button(onClick = { viewModel.loadDays() }) {
+                        Button(onClick = { viewModel.loadPullRequests() }) {
                             Text("Retry")
                         }
                     }
@@ -138,8 +160,8 @@ fun DayListScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DayCard(
-    day: DaySummary,
+fun PullRequestCard(
+    pullRequest: PullRequest,
     onClick: () -> Unit
 ) {
     Card(
@@ -147,21 +169,13 @@ fun DayCard(
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = day.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.weight(1f)
-                )
-                StatusBadge(status = day.status)
-            }
+            Text(
+                text = pullRequest.title,
+                style = MaterialTheme.typography.titleMedium
+            )
             Spacer(Modifier.height(4.dp))
             Text(
-                text = "${day.date} • ${day.location}",
+                text = "#${pullRequest.number} • ${formatDate(pullRequest.created_at)}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.outline
             )
@@ -169,49 +183,39 @@ fun DayCard(
     }
 }
 
-@Composable
-fun StatusBadge(status: String) {
-    val (color, text) = when (status) {
-        "completed" -> MaterialTheme.colorScheme.primary to "Done"
-        "in-progress" -> MaterialTheme.colorScheme.tertiary to "Today"
-        else -> MaterialTheme.colorScheme.outline to "Planned"
-    }
-    Surface(
-        color = color.copy(alpha = 0.1f),
-        shape = RoundedCornerShape(4.dp)
-    ) {
-        Text(
-            text = text,
-            color = color,
-            style = MaterialTheme.typography.labelSmall,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-        )
+private fun formatDate(isoDate: String): String {
+    return try {
+        val instant = Instant.parse(isoDate)
+        val formatter = DateTimeFormatter.ofPattern("MMM d, yyyy")
+            .withZone(ZoneId.systemDefault())
+        formatter.format(instant)
+    } catch (e: Exception) {
+        isoDate
     }
 }
 
-class DayListViewModel : ViewModel() {
-    private val _uiState = MutableStateFlow<DayListUiState>(DayListUiState.Loading)
-    val uiState: StateFlow<DayListUiState> = _uiState.asStateFlow()
+class PullRequestListViewModel : ViewModel() {
+    private val _uiState = MutableStateFlow<PullRequestListUiState>(PullRequestListUiState.Loading)
+    val uiState: StateFlow<PullRequestListUiState> = _uiState.asStateFlow()
 
-    fun loadDays() {
+    fun loadPullRequests() {
         viewModelScope.launch {
-            _uiState.value = DayListUiState.Loading
+            _uiState.value = PullRequestListUiState.Loading
 
             try {
-                // Don't check token - just try the request and let it fail if needed
                 val repository = ApiClient.repository
 
-                repository.getAllDays()
-                    .onSuccess { days ->
-                        _uiState.value = DayListUiState.Success(days)
+                repository.getAppCreatedPullRequests()
+                    .onSuccess { pullRequests ->
+                        _uiState.value = PullRequestListUiState.Success(pullRequests)
                     }
                     .onFailure { e ->
-                        _uiState.value = DayListUiState.Error(
-                            e.message ?: "Failed to load days. Check your internet connection."
+                        _uiState.value = PullRequestListUiState.Error(
+                            e.message ?: "Failed to load pull requests. Check your internet connection."
                         )
                     }
             } catch (e: Exception) {
-                _uiState.value = DayListUiState.Error(
+                _uiState.value = PullRequestListUiState.Error(
                     "Error: ${e.message ?: "Unknown error occurred"}"
                 )
             }
@@ -219,8 +223,8 @@ class DayListViewModel : ViewModel() {
     }
 }
 
-sealed class DayListUiState {
-    object Loading : DayListUiState()
-    data class Success(val days: List<DaySummary>) : DayListUiState()
-    data class Error(val message: String) : DayListUiState()
+sealed class PullRequestListUiState {
+    object Loading : PullRequestListUiState()
+    data class Success(val pullRequests: List<PullRequest>) : PullRequestListUiState()
+    data class Error(val message: String) : PullRequestListUiState()
 }
