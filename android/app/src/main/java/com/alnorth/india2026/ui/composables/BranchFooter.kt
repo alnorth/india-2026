@@ -4,6 +4,9 @@ import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -39,6 +42,7 @@ fun BranchFooter(
                     context.startActivity(intent)
                 }
             }
+            .windowInsetsPadding(WindowInsets.navigationBars)
             .padding(vertical = 8.dp, horizontal = 16.dp),
         contentAlignment = Alignment.Center
     ) {
