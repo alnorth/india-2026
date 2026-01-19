@@ -130,7 +130,8 @@ class GitHubRepository(
 
     suspend fun getAmplifyPreviewUrl(prNumber: Int): String? {
         return try {
-            val comments = api.getPullRequestComments(owner, repo, prNumber)
+            // Use issue comments endpoint - Amplify bot posts to general comments, not review comments
+            val comments = api.getIssueComments(owner, repo, prNumber)
             val amplifyComment = comments.find {
                 it.user.login == "aws-amplify-us-east-1" ||
                 it.body.contains("amplifyapp.com")

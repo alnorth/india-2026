@@ -56,6 +56,13 @@ interface GitHubApi {
         @Path("pull_number") pullNumber: Int
     ): List<PullRequestComment>
 
+    @GET("repos/{owner}/{repo}/issues/{issue_number}/comments")
+    suspend fun getIssueComments(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Path("issue_number") issueNumber: Int
+    ): List<PullRequestComment>
+
     @GET("repos/{owner}/{repo}/pulls")
     suspend fun getPullRequests(
         @Path("owner") owner: String,
