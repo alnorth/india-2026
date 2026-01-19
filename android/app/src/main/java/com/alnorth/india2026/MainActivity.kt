@@ -74,17 +74,13 @@ fun India2026App() {
         navController = navController,
         startDestination = "day_list"
     ) {
-        // Day List Screen (testing without actual screen)
+        // Day List Screen
         composable("day_list") {
-            androidx.compose.foundation.layout.Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = androidx.compose.ui.Alignment.Center
-            ) {
-                androidx.compose.material3.Text(
-                    "Step 3: Navigation works!",
-                    style = MaterialTheme.typography.headlineMedium
-                )
-            }
+            DayListScreen(
+                onDaySelected = { slug ->
+                    navController.navigate("edit_day/$slug")
+                }
+            )
         }
 
         // Edit Day Screen
