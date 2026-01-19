@@ -192,7 +192,7 @@ fun PullRequestCard(
                 Text(
                     text = "#${pullRequest.number} • ${formatDate(pullRequest.created_at)}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.outline
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             IconButton(onClick = onEdit) {
