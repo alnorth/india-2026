@@ -18,6 +18,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.alnorth.india2026.api.ApiClient
 import com.alnorth.india2026.model.DayEntry
+import com.alnorth.india2026.model.PhotoWithCaption
 import com.alnorth.india2026.model.SelectedPhoto
 import com.alnorth.india2026.model.SubmissionResult
 import com.alnorth.india2026.ui.composables.ExistingPhotosSection
