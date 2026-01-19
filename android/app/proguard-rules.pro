@@ -18,12 +18,28 @@
 -keepattributes Signature
 -keepattributes *Annotation*
 -dontwarn sun.misc.**
--keep class com.google.gson.examples.android.model.** { <fields>; }
 -keep class * implements com.google.gson.TypeAdapter
 -keep class * implements com.google.gson.TypeAdapterFactory
 -keep class * implements com.google.gson.JsonSerializer
 -keep class * implements com.google.gson.JsonDeserializer
 
-# Keep our API models
+# Gson internal classes - critical for generic type handling
+-keep class com.google.gson.internal.** { *; }
+-keep class com.google.gson.reflect.TypeToken { *; }
+-keep class * extends com.google.gson.reflect.TypeToken
+
+# Keep generic signature for classes used with Gson (prevents ClassCastException)
+-keepattributes Signature
+-keep class com.google.gson.** { *; }
+
+# Keep our API models with all fields and signatures
 -keep class com.alnorth.india2026.api.** { *; }
 -keep class com.alnorth.india2026.model.** { *; }
+
+# Preserve field names and generic signatures in data classes
+-keepclassmembers class com.alnorth.india2026.api.** {
+    <fields>;
+}
+-keepclassmembers class com.alnorth.india2026.model.** {
+    <fields>;
+}
