@@ -23,7 +23,7 @@ data class DayEntry(
         appendLine("---")
         appendLine("date: $date")
         appendLine("title: \"$title\"")
-        appendLine("distance: $distance")
+        appendLine("distance:")
         appendLine("location: \"$location\"")
         appendLine("status: $status")
         stravaId?.let { if (it.isNotEmpty()) appendLine("stravaId: \"$it\"") }
@@ -50,7 +50,6 @@ data class DaySummary(
     val title: String,
     val date: String,
     val status: String,
-    val distance: Int,
     val location: String
 )
 

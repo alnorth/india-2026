@@ -93,7 +93,7 @@ fun EditDayScreen(
                             )
                             Spacer(Modifier.height(4.dp))
                             Text(
-                                text = "${state.dayEntry.date} • ${state.dayEntry.distance} km • ${state.dayEntry.location}",
+                                text = "${state.dayEntry.date} • ${state.dayEntry.location}",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.outline
                             )

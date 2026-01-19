@@ -181,7 +181,6 @@ class GitHubRepository(
             title = frontmatter["title"] ?: slug,
             date = frontmatter["date"] ?: "",
             status = frontmatter["status"] ?: "planned",
-            distance = frontmatter["distance"]?.toIntOrNull() ?: 0,
             location = frontmatter["location"] ?: ""
         )
     }
@@ -271,7 +270,6 @@ class GitHubRepository(
             appendLine("## ${entry.title}")
             appendLine()
             appendLine("**Date:** ${entry.date}")
-            appendLine("**Distance:** ${entry.distance} km")
             appendLine("**Location:** ${entry.location}")
             appendLine("**Status:** ${entry.status}")
             appendLine()

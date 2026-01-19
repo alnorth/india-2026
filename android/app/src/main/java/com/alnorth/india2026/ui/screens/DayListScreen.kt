@@ -156,7 +156,7 @@ fun DayCard(
             }
             Spacer(Modifier.height(4.dp))
             Text(
-                text = "${day.date} • ${day.distance} km • ${day.location}",
+                text = "${day.date} • ${day.location}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.outline
             )
