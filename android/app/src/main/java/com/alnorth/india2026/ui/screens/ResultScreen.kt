@@ -29,7 +29,8 @@ import kotlinx.coroutines.launch
 fun ResultScreen(
     result: SubmissionResult,
     viewModel: ResultViewModel = viewModel(),
-    onCreateAnother: () -> Unit
+    onCreateAnother: () -> Unit,
+    onEditDay: (slug: String, branchName: String) -> Unit
 ) {
     val previewUrl by viewModel.previewUrl.collectAsState()
     val context = LocalContext.current
@@ -158,6 +159,20 @@ fun ResultScreen(
             }
 
             Spacer(Modifier.weight(1f))
+
+            // Edit this day button
+            OutlinedButton(
+                onClick = {
+                    // Extract slug from branch name (e.g., "app/day-1-1234567890" -> "day-1")
+                    val slug = result.branchName
+                        .removePrefix("app/")
+                        .substringBeforeLast("-")
+                    onEditDay(slug, result.branchName)
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Edit This Day")
+            }
 
             // Create another button
             Button(
