@@ -81,12 +81,12 @@ data class GitHubUser(
 
 // For listing pull requests
 data class PullRequest(
-    val number: Int,
-    val title: String,
-    val html_url: String,
-    val state: String,
-    val created_at: String,
-    val updated_at: String,
-    val head: PullRequestHead,
-    val user: GitHubUser
+    @SerializedName("number") val number: Int,
+    @SerializedName("title") val title: String,
+    @SerializedName("html_url") val html_url: String,
+    @SerializedName("state") val state: String,
+    @SerializedName("created_at") val created_at: String,
+    @SerializedName("updated_at") val updated_at: String,
+    @SerializedName("head") val head: PullRequestHead,
+    @SerializedName("user") val user: GitHubUser
 )
