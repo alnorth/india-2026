@@ -15,6 +15,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Required to create releases
+      pull-requests: write  # Required to comment on PRs
 
     steps:
       - name: Checkout code
