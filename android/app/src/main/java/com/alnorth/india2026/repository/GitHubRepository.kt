@@ -43,7 +43,11 @@ class GitHubRepository(
             api.getFileContent(owner, repo, "website/content/days/$slug/index.md")
         }
         val markdown = String(Base64.decode(indexContent.content, Base64.DEFAULT))
-        parseDayEntry(slug, markdown, indexContent.sha)
+
+        // Get actual photos from the branch's directory listing
+        val photos = getPhotosFromDirectory(slug, branchName)
+
+        parseDayEntry(slug, markdown, indexContent.sha, photos)
     }
 
     // Update an existing day entry
@@ -194,6 +198,26 @@ class GitHubRepository(
         }
     }
 
+    // Get photos from directory listing on a specific branch
+    private suspend fun getPhotosFromDirectory(slug: String, branchName: String?): List<PhotoWithCaption> {
+        return try {
+            // Get actual files from the photos directory
+            val photoFiles = if (branchName != null) {
+                api.getDirectoryContents(owner, repo, "website/content/days/$slug/photos", branchName)
+            } else {
+                api.getDirectoryContents(owner, repo, "website/content/days/$slug/photos")
+            }
+
+            // Filter for image files and sort by name
+            photoFiles
+                .filter { it.type == "file" && (it.name.endsWith(".jpg") || it.name.endsWith(".jpeg") || it.name.endsWith(".png")) }
+                .sortedBy { it.name }
+                .map { PhotoWithCaption(filename = it.name, caption = "") }
+        } catch (e: Exception) {
+            emptyList()  // No photos directory yet
+        }
+    }
+
     suspend fun getAmplifyPreviewUrl(prNumber: Int): String? {
         return try {
             // Use issue comments endpoint - Amplify bot posts to general comments, not review comments
@@ -262,10 +286,17 @@ class GitHubRepository(
         )
     }
 
-    private fun parseDayEntry(slug: String, markdown: String, sha: String): DayEntry {
+    private fun parseDayEntry(slug: String, markdown: String, sha: String, directoryPhotos: List<PhotoWithCaption>): DayEntry {
         val frontmatter = extractFrontmatter(markdown)
-        val photos = parsePhotos(markdown)
+        val photoCaptions = parsePhotoCaptions(markdown)
         val content = markdown.substringAfter("---").substringAfter("---").trim()
+
+        // Merge directory photos with captions from markdown
+        val photos = directoryPhotos.map { photo ->
+            val caption = photoCaptions[photo.filename] ?: ""
+            photo.copy(caption = caption)
+        }
+
         return DayEntry(
             slug = slug,
             fileSha = sha,
@@ -296,19 +327,20 @@ class GitHubRepository(
             }
     }
 
-    private fun parsePhotos(markdown: String): List<PhotoWithCaption> {
-        if (!markdown.startsWith("---")) return emptyList()
+    // Parse photo captions from markdown frontmatter
+    private fun parsePhotoCaptions(markdown: String): Map<String, String> {
+        if (!markdown.startsWith("---")) return emptyMap()
 
         val frontmatterSection = markdown
             .substringAfter("---")
             .substringBefore("---")
 
-        // Simple YAML list parser for photos
-        val photos = mutableListOf<PhotoWithCaption>()
+        // Simple YAML list parser for photo captions
+        val captions = mutableMapOf<String, String>()
         var currentFilename: String? = null
 
         val inPhotosSection = frontmatterSection.contains("photos:")
-        if (!inPhotosSection) return emptyList()
+        if (!inPhotosSection) return emptyMap()
 
         val lines = frontmatterSection.lines()
         var inPhotos = false
@@ -328,7 +360,7 @@ class GitHubRepository(
                         .substringAfter("caption:")
                         .trim()
                         .removeSurrounding("\"")
-                    photos.add(PhotoWithCaption(currentFilename!!, caption))
+                    captions[currentFilename!!] = caption
                     currentFilename = null
                 }
                 inPhotos && !trimmed.startsWith("-") && !trimmed.startsWith("file:") &&
@@ -338,7 +370,7 @@ class GitHubRepository(
                 }
             }
         }
-        return photos
+        return captions
     }
 
     private fun buildPrBody(entry: DayEntry, newPhotoCount: Int): String {
