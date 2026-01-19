@@ -3,12 +3,69 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-  <group android:scaleX="2.61"
-      android:scaleY="2.61"
-      android:translateX="22.68"
-      android:translateY="22.68">
+
+  <!-- Saffron stripe (top) -->
+  <path
+      android:pathData="M20,30 L88,30 L88,46 L20,46 Z"
+      android:fillColor="#FF9933"/>
+
+  <!-- White stripe (middle) -->
+  <path
+      android:pathData="M20,46 L88,46 L88,62 L20,62 Z"
+      android:fillColor="#FFFFFF"/>
+
+  <!-- Green stripe (bottom) -->
+  <path
+      android:pathData="M20,62 L88,62 L88,78 L20,78 Z"
+      android:fillColor="#138808"/>
+
+  <!-- Ashoka Chakra (24-spoke wheel) in navy blue -->
+  <group android:translateX="54"
+      android:translateY="54">
+    <!-- Outer circle of chakra -->
     <path
-        android:pathData="M12,2L4,5v6.09c0,5.05 3.41,9.76 8,10.91c4.59,-1.15 8,-5.86 8,-10.91V5L12,2zM12,11.99h7c-0.53,4.12 -3.28,7.79 -7,8.94V12H5V6.3l7,-3.11V12z"
-        android:fillColor="#FFFFFF"/>
+        android:pathData="M 0,-8 A 8,8 0 1,1 0,8 A 8,8 0 1,1 0,-8 Z"
+        android:strokeColor="#000080"
+        android:strokeWidth="0.8"
+        android:fillColor="@android:color/transparent"/>
+
+    <!-- Inner circle of chakra -->
+    <path
+        android:pathData="M 0,-1.5 A 1.5,1.5 0 1,1 0,1.5 A 1.5,1.5 0 1,1 0,-1.5 Z"
+        android:fillColor="#000080"/>
+
+    <!-- 24 spokes -->
+    <path android:pathData="M 0,-1.5 L 0,-8" android:strokeColor="#000080" android:strokeWidth="0.4"/>
+    <path android:pathData="M 0,1.5 L 0,8" android:strokeColor="#000080" android:strokeWidth="0.4"/>
+    <path android:pathData="M -1.5,0 L -8,0" android:strokeColor="#000080" android:strokeWidth="0.4"/>
+    <path android:pathData="M 1.5,0 L 8,0" android:strokeColor="#000080" android:strokeWidth="0.4"/>
+
+    <!-- Diagonal spokes at 45 degrees -->
+    <path android:pathData="M -1.06,-1.06 L -5.66,-5.66" android:strokeColor="#000080" android:strokeWidth="0.4"/>
+    <path android:pathData="M 1.06,1.06 L 5.66,5.66" android:strokeColor="#000080" android:strokeWidth="0.4"/>
+    <path android:pathData="M 1.06,-1.06 L 5.66,-5.66" android:strokeColor="#000080" android:strokeWidth="0.4"/>
+    <path android:pathData="M -1.06,1.06 L -5.66,5.66" android:strokeColor="#000080" android:strokeWidth="0.4"/>
+
+    <!-- Additional spokes at 22.5, 67.5, etc. degrees -->
+    <path android:pathData="M -0.62,-1.38 L -3.06,-6.83" android:strokeColor="#000080" android:strokeWidth="0.4"/>
+    <path android:pathData="M 0.62,1.38 L 3.06,6.83" android:strokeColor="#000080" android:strokeWidth="0.4"/>
+    <path android:pathData="M 1.38,-0.62 L 6.83,-3.06" android:strokeColor="#000080" android:strokeWidth="0.4"/>
+    <path android:pathData="M -1.38,0.62 L -6.83,3.06" android:strokeColor="#000080" android:strokeWidth="0.4"/>
+
+    <path android:pathData="M -1.38,-0.62 L -6.83,-3.06" android:strokeColor="#000080" android:strokeWidth="0.4"/>
+    <path android:pathData="M 1.38,0.62 L 6.83,3.06" android:strokeColor="#000080" android:strokeWidth="0.4"/>
+    <path android:pathData="M -0.62,1.38 L -3.06,6.83" android:strokeColor="#000080" android:strokeWidth="0.4"/>
+    <path android:pathData="M 0.62,-1.38 L 3.06,-6.83" android:strokeColor="#000080" android:strokeWidth="0.4"/>
+
+    <!-- More intermediate spokes -->
+    <path android:pathData="M -0.31,-1.47 L -1.53,-7.29" android:strokeColor="#000080" android:strokeWidth="0.4"/>
+    <path android:pathData="M 0.31,1.47 L 1.53,7.29" android:strokeColor="#000080" android:strokeWidth="0.4"/>
+    <path android:pathData="M 1.47,-0.31 L 7.29,-1.53" android:strokeColor="#000080" android:strokeWidth="0.4"/>
+    <path android:pathData="M -1.47,0.31 L -7.29,1.53" android:strokeColor="#000080" android:strokeWidth="0.4"/>
+
+    <path android:pathData="M -1.47,-0.31 L -7.29,-1.53" android:strokeColor="#000080" android:strokeWidth="0.4"/>
+    <path android:pathData="M 1.47,0.31 L 7.29,1.53" android:strokeColor="#000080" android:strokeWidth="0.4"/>
+    <path android:pathData="M -0.31,1.47 L -1.53,7.29" android:strokeColor="#000080" android:strokeWidth="0.4"/>
+    <path android:pathData="M 0.31,-1.47 L 1.53,-7.29" android:strokeColor="#000080" android:strokeWidth="0.4"/>
   </group>
 </vector>
