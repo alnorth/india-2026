@@ -141,7 +141,7 @@ class GitHubRepository(
             ?: throw IllegalArgumentException("No open PR found for branch $branchName")
 
         // 2. Upload new photos first (to get filenames)
-        val existingPhotoCount = getExistingPhotoCount(dayEntry.slug)
+        val existingPhotoCount = getExistingPhotoCount(dayEntry.slug, branchName)
         val uploadedPhotos = mutableListOf<PhotoWithCaption>()
 
         newPhotos.forEachIndexed { index, selectedPhoto ->
@@ -189,9 +189,13 @@ class GitHubRepository(
         )
     }
 
-    private suspend fun getExistingPhotoCount(slug: String): Int {
+    private suspend fun getExistingPhotoCount(slug: String, branchName: String? = null): Int {
         return try {
-            val contents = api.getDirectoryContents(owner, repo, "website/content/days/$slug/photos")
+            val contents = if (branchName != null) {
+                api.getDirectoryContents(owner, repo, "website/content/days/$slug/photos", branchName)
+            } else {
+                api.getDirectoryContents(owner, repo, "website/content/days/$slug/photos")
+            }
             contents.count { it.type == "file" && it.name.endsWith(".jpg") }
         } catch (e: Exception) {
             0  // No photos directory yet
