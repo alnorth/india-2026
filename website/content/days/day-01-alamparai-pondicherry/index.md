@@ -4,10 +4,12 @@ title: "Day 1: Alamparai to Pondicherry"
 location: "Tamil Nadu"
 status: planned
 photos:
-  - file: "sunrise-beach.jpg"
-    caption: "Golden sunrise at Alamparai Fort ruins"
+  - file: "photo-1.jpg"
+    caption: ""
+  - file: "photo-2.jpg"
+    caption: ""
 ---
 
 ## Route
 
-Alamparai to Pondicherry along the coast. Hello
+Alamparai to Pondicherry along the coast. Hello hi
