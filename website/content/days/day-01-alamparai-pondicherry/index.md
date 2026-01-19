@@ -10,6 +10,8 @@ photos:
     caption: ""
   - file: "photo-3.jpg"
     caption: ""
+  - file: "photo-4.jpg"
+    caption: "A test "
 ---
 
 ## Route
