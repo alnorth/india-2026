@@ -44,7 +44,7 @@ fun BranchFooter(
                 }
             }
             .windowInsetsPadding(WindowInsets.navigationBars)
-            .padding(vertical = 8.dp, horizontal = 16.dp),
+            .padding(top = 4.dp, bottom = 12.dp, horizontal = 16.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
