@@ -194,7 +194,6 @@ class GitHubRepository(
             fileSha = sha,
             date = frontmatter["date"] ?: "",
             title = frontmatter["title"] ?: slug,
-            distance = frontmatter["distance"]?.toIntOrNull() ?: 0,
             location = frontmatter["location"] ?: "",
             status = frontmatter["status"] ?: "planned",
             stravaId = frontmatter["stravaId"]?.ifEmpty { null },
