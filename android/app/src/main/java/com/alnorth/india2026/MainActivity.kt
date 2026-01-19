@@ -128,6 +128,12 @@ fun India2026App() {
             PullRequestListScreen(
                 onNavigateBack = {
                     navController.popBackStack()
+                },
+                onPullRequestSelected = { result ->
+                    submissionResult = result
+                    navController.navigate("result") {
+                        popUpTo("pull_requests") { inclusive = false }
+                    }
                 }
             )
         }

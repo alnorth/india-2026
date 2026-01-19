@@ -1,7 +1,5 @@
 package com.alnorth.india2026.ui.screens
 
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -13,7 +11,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
@@ -33,10 +30,10 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun PullRequestListScreen(
     viewModel: PullRequestListViewModel = viewModel(),
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onPullRequestSelected: (com.alnorth.india2026.model.SubmissionResult) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.loadPullRequests()
@@ -116,8 +113,12 @@ fun PullRequestListScreen(
                             PullRequestCard(
                                 pullRequest = pr,
                                 onClick = {
-                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(pr.html_url))
-                                    context.startActivity(intent)
+                                    val submissionResult = com.alnorth.india2026.model.SubmissionResult(
+                                        prNumber = pr.number,
+                                        prUrl = pr.html_url,
+                                        branchName = pr.head.ref
+                                    )
+                                    onPullRequestSelected(submissionResult)
                                 }
                             )
                         }
