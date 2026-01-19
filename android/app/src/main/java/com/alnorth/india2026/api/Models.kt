@@ -1,90 +1,92 @@
 package com.alnorth.india2026.api
 
+import com.google.gson.annotations.SerializedName
+
 // For fetching existing content from GitHub
 data class GitHubContent(
-    val name: String,
-    val path: String,
-    val sha: String,
-    val type: String,  // "file" or "dir"
-    val content: String?,  // Base64 encoded (only for files)
-    val encoding: String?
+    @SerializedName("name") val name: String,
+    @SerializedName("path") val path: String,
+    @SerializedName("sha") val sha: String,
+    @SerializedName("type") val type: String,  // "file" or "dir"
+    @SerializedName("content") val content: String?,  // Base64 encoded (only for files)
+    @SerializedName("encoding") val encoding: String?
 )
 
 data class BranchResponse(
-    val name: String,
-    val commit: CommitRef
+    @SerializedName("name") val name: String,
+    @SerializedName("commit") val commit: CommitRef
 )
 
 data class CommitRef(
-    val sha: String
+    @SerializedName("sha") val sha: String
 )
 
 data class CreateBranchRequest(
-    val ref: String,  // "refs/heads/branch-name"
-    val sha: String   // SHA of commit to branch from
+    @SerializedName("ref") val ref: String,  // "refs/heads/branch-name"
+    @SerializedName("sha") val sha: String   // SHA of commit to branch from
 )
 
 data class RefResponse(
-    val ref: String,
-    val url: String
+    @SerializedName("ref") val ref: String,
+    @SerializedName("url") val url: String
 )
 
 // For updating existing files (requires sha) or creating new ones
 data class UpdateFileRequest(
-    val message: String,
-    val content: String,  // Base64 encoded
-    val branch: String,
-    val sha: String? = null  // Required when updating existing file
+    @SerializedName("message") val message: String,
+    @SerializedName("content") val content: String,  // Base64 encoded
+    @SerializedName("branch") val branch: String,
+    @SerializedName("sha") val sha: String? = null  // Required when updating existing file
 )
 
 data class FileResponse(
-    val content: FileContent,
-    val commit: CommitInfo
+    @SerializedName("content") val content: FileContent,
+    @SerializedName("commit") val commit: CommitInfo
 )
 
 data class FileContent(
-    val path: String,
-    val sha: String
+    @SerializedName("path") val path: String,
+    @SerializedName("sha") val sha: String
 )
 
 data class CommitInfo(
-    val sha: String
+    @SerializedName("sha") val sha: String
 )
 
 data class CreatePullRequestRequest(
-    val title: String,
-    val body: String,
-    val head: String,  // Branch name
-    val base: String   // Target branch (master)
+    @SerializedName("title") val title: String,
+    @SerializedName("body") val body: String,
+    @SerializedName("head") val head: String,  // Branch name
+    @SerializedName("base") val base: String   // Target branch (master)
 )
 
 data class PullRequestResponse(
-    val number: Int,
-    val html_url: String,
-    val head: PullRequestHead
+    @SerializedName("number") val number: Int,
+    @SerializedName("html_url") val html_url: String,
+    @SerializedName("head") val head: PullRequestHead
 )
 
 data class PullRequestHead(
-    val ref: String
+    @SerializedName("ref") val ref: String
 )
 
 data class PullRequestComment(
-    val body: String,
-    val user: GitHubUser
+    @SerializedName("body") val body: String,
+    @SerializedName("user") val user: GitHubUser
 )
 
 data class GitHubUser(
-    val login: String
+    @SerializedName("login") val login: String
 )
 
 // For listing pull requests
 data class PullRequest(
-    val number: Int,
-    val title: String,
-    val html_url: String,
-    val state: String,
-    val created_at: String,
-    val updated_at: String,
-    val head: PullRequestHead,
-    val user: GitHubUser
+    @SerializedName("number") val number: Int,
+    @SerializedName("title") val title: String,
+    @SerializedName("html_url") val html_url: String,
+    @SerializedName("state") val state: String,
+    @SerializedName("created_at") val created_at: String,
+    @SerializedName("updated_at") val updated_at: String,
+    @SerializedName("head") val head: PullRequestHead,
+    @SerializedName("user") val user: GitHubUser
 )

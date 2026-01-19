@@ -3,7 +3,9 @@ package com.alnorth.india2026.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CallSplit
 import androidx.compose.material.icons.filled.Refresh
@@ -109,11 +111,12 @@ fun DayListScreen(
                         .fillMaxSize()
                         .padding(padding)
                         .padding(16.dp),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.TopCenter
                 ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier = Modifier.verticalScroll(rememberScrollState())
                     ) {
                         Text(
                             "Error loading days",
@@ -122,9 +125,9 @@ fun DayListScreen(
                         )
                         Text(
                             state.message,
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.outline,
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Start
                         )
                         Button(onClick = { viewModel.loadDays() }) {
                             Text("Retry")
@@ -207,12 +210,12 @@ class DayListViewModel : ViewModel() {
                     }
                     .onFailure { e ->
                         _uiState.value = DayListUiState.Error(
-                            e.message ?: "Failed to load days. Check your internet connection."
+                            "${e.message ?: "Failed to load days"}\n\nStack trace:\n${e.stackTraceToString()}"
                         )
                     }
             } catch (e: Exception) {
                 _uiState.value = DayListUiState.Error(
-                    "Error: ${e.message ?: "Unknown error occurred"}"
+                    "Error: ${e.message ?: "Unknown error occurred"}\n\nStack trace:\n${e.stackTraceToString()}"
                 )
             }
         }
