@@ -119,6 +119,68 @@ class GitHubRepository(
         )
     }
 
+    // Commit changes to an existing PR branch
+    suspend fun commitToExistingBranch(
+        branchName: String,
+        dayEntry: DayEntry,
+        newPhotos: List<SelectedPhoto>,
+        context: Context
+    ): Result<SubmissionResult> = runCatching {
+
+        // 1. Get the PR number for this branch
+        val allPRs = api.getPullRequests(owner, repo, state = "open")
+        val pr = allPRs.find { it.head.ref == branchName }
+            ?: throw IllegalArgumentException("No open PR found for branch $branchName")
+
+        // 2. Upload new photos first (to get filenames)
+        val existingPhotoCount = getExistingPhotoCount(dayEntry.slug)
+        val uploadedPhotos = mutableListOf<PhotoWithCaption>()
+
+        newPhotos.forEachIndexed { index, selectedPhoto ->
+            val photoBytes = compressImage(context, selectedPhoto.uri)
+            val photoNum = existingPhotoCount + index + 1
+            val filename = "photo-$photoNum.jpg"
+            val photoPath = "website/content/days/${dayEntry.slug}/photos/$filename"
+
+            api.createOrUpdateFile(
+                owner, repo, photoPath,
+                UpdateFileRequest(
+                    message = "Add photo $photoNum",
+                    content = Base64.encodeToString(photoBytes, Base64.NO_WRAP),
+                    branch = branchName
+                )
+            )
+
+            uploadedPhotos.add(PhotoWithCaption(filename, selectedPhoto.caption))
+        }
+
+        // 3. Update markdown file with photo captions
+        val markdownContent = dayEntry.toMarkdown(uploadedPhotos)
+        val markdownPath = "website/content/days/${dayEntry.slug}/index.md"
+
+        // Get the current file SHA from the branch
+        val currentFile = api.getFileContent(owner, repo, markdownPath, branchName)
+
+        api.createOrUpdateFile(
+            owner, repo, markdownPath,
+            UpdateFileRequest(
+                message = "Update ${dayEntry.title}",
+                content = Base64.encodeToString(
+                    markdownContent.toByteArray(),
+                    Base64.NO_WRAP
+                ),
+                branch = branchName,
+                sha = currentFile.sha  // Use SHA from the branch, not master
+            )
+        )
+
+        SubmissionResult(
+            prNumber = pr.number,
+            prUrl = pr.html_url,
+            branchName = branchName
+        )
+    }
+
     private suspend fun getExistingPhotoCount(slug: String): Int {
         return try {
             val contents = api.getDirectoryContents(owner, repo, "website/content/days/$slug/photos")

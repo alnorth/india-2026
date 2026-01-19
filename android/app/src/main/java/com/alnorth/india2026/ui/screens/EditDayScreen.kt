@@ -30,6 +30,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun EditDayScreen(
     slug: String,
+    branchName: String? = null,
     viewModel: EditDayViewModel = viewModel(),
     onNavigateBack: () -> Unit,
     onNavigateToResult: (SubmissionResult) -> Unit
@@ -37,8 +38,8 @@ fun EditDayScreen(
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
-    LaunchedEffect(slug) {
-        viewModel.loadDay(slug)
+    LaunchedEffect(slug, branchName) {
+        viewModel.loadDay(slug, branchName)
     }
 
     Scaffold(
@@ -143,7 +144,7 @@ fun EditDayScreen(
                         modifier = Modifier.fillMaxWidth(),
                         enabled = state.hasChanges
                     ) {
-                        Text("Create Pull Request")
+                        Text(if (branchName != null) "Commit Changes" else "Create Pull Request")
                     }
 
                     if (!state.hasChanges) {
@@ -212,7 +213,7 @@ fun EditDayScreen(
                             OutlinedButton(onClick = onNavigateBack) {
                                 Text("Go Back")
                             }
-                            Button(onClick = { viewModel.loadDay(slug) }) {
+                            Button(onClick = { viewModel.loadDay(slug, branchName) }) {
                                 Text("Try Again")
                             }
                         }
@@ -268,8 +269,10 @@ class EditDayViewModel : ViewModel() {
     val uiState: StateFlow<EditDayUiState> = _uiState.asStateFlow()
 
     private var originalEntry: DayEntry? = null
+    private var existingBranchName: String? = null
 
-    fun loadDay(slug: String) {
+    fun loadDay(slug: String, branchName: String? = null) {
+        existingBranchName = branchName
         viewModelScope.launch {
             _uiState.value = EditDayUiState.Loading
 
@@ -346,27 +349,47 @@ class EditDayViewModel : ViewModel() {
 
         viewModelScope.launch {
             try {
-                _uiState.value = EditDayUiState.Submitting("Creating branch...")
-
                 val updatedEntry = current.dayEntry.copy(
                     status = current.status,
                     stravaId = current.stravaId.ifEmpty { null },
                     content = current.content
                 )
 
-                _uiState.value = EditDayUiState.Submitting("Uploading photos...")
-
                 val repository = ApiClient.repository
 
-                repository.updateDayEntry(updatedEntry, current.newPhotos, context)
-                    .onSuccess { result ->
-                        _uiState.value = EditDayUiState.Success(result)
-                    }
-                    .onFailure { e ->
-                        _uiState.value = EditDayUiState.Error(
-                            e.message ?: "Failed to create pull request"
-                        )
-                    }
+                if (existingBranchName != null) {
+                    // Commit to existing PR branch
+                    _uiState.value = EditDayUiState.Submitting("Uploading photos...")
+
+                    repository.commitToExistingBranch(
+                        existingBranchName!!,
+                        updatedEntry,
+                        current.newPhotos,
+                        context
+                    )
+                        .onSuccess { result ->
+                            _uiState.value = EditDayUiState.Success(result)
+                        }
+                        .onFailure { e ->
+                            _uiState.value = EditDayUiState.Error(
+                                e.message ?: "Failed to commit changes"
+                            )
+                        }
+                } else {
+                    // Create new PR
+                    _uiState.value = EditDayUiState.Submitting("Creating branch...")
+                    _uiState.value = EditDayUiState.Submitting("Uploading photos...")
+
+                    repository.updateDayEntry(updatedEntry, current.newPhotos, context)
+                        .onSuccess { result ->
+                            _uiState.value = EditDayUiState.Success(result)
+                        }
+                        .onFailure { e ->
+                            _uiState.value = EditDayUiState.Error(
+                                e.message ?: "Failed to create pull request"
+                            )
+                        }
+                }
             } catch (e: Exception) {
                 _uiState.value = EditDayUiState.Error(
                     "Error: ${e.message ?: "Unknown error occurred"}"

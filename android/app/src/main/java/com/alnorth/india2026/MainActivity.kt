@@ -89,14 +89,21 @@ fun India2026App() {
 
         // Edit Day Screen
         composable(
-            route = "edit_day/{slug}",
+            route = "edit_day/{slug}?branchName={branchName}",
             arguments = listOf(
-                navArgument("slug") { type = NavType.StringType }
+                navArgument("slug") { type = NavType.StringType },
+                navArgument("branchName") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
             )
         ) { backStackEntry ->
             val slug = backStackEntry.arguments?.getString("slug") ?: return@composable
+            val branchName = backStackEntry.arguments?.getString("branchName")
             EditDayScreen(
                 slug = slug,
+                branchName = branchName,
                 onNavigateBack = {
                     navController.popBackStack()
                 },
@@ -118,6 +125,9 @@ fun India2026App() {
                         navController.navigate("day_list") {
                             popUpTo("day_list") { inclusive = true }
                         }
+                    },
+                    onEditDay = { slug, branchName ->
+                        navController.navigate("edit_day/$slug?branchName=$branchName")
                     }
                 )
             }
@@ -134,6 +144,9 @@ fun India2026App() {
                     navController.navigate("result") {
                         popUpTo("pull_requests") { inclusive = false }
                     }
+                },
+                onEditDay = { slug, branchName ->
+                    navController.navigate("edit_day/$slug?branchName=$branchName")
                 }
             )
         }
