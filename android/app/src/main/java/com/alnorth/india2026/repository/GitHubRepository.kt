@@ -1,13 +1,10 @@
 package com.alnorth.india2026.repository
 
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
 import android.util.Base64
 import com.alnorth.india2026.api.*
 import com.alnorth.india2026.model.*
-import java.io.ByteArrayOutputStream
 
 class GitHubRepository(
     private val api: GitHubApi
@@ -76,7 +73,7 @@ class GitHubRepository(
         val uploadedPhotos = mutableListOf<PhotoWithCaption>()
 
         newPhotos.forEachIndexed { index, selectedPhoto ->
-            val photoBytes = compressImage(context, selectedPhoto.uri)
+            val photoBytes = readOriginalImage(context, selectedPhoto.uri)
             val photoNum = existingPhotoCount + index + 1
             val filename = "photo-$photoNum.jpg"
             val photoPath = "website/content/days/${dayEntry.slug}/photos/$filename"
@@ -145,7 +142,7 @@ class GitHubRepository(
         val uploadedPhotos = mutableListOf<PhotoWithCaption>()
 
         newPhotos.forEachIndexed { index, selectedPhoto ->
-            val photoBytes = compressImage(context, selectedPhoto.uri)
+            val photoBytes = readOriginalImage(context, selectedPhoto.uri)
             val photoNum = existingPhotoCount + index + 1
             val filename = "photo-$photoNum.jpg"
             val photoPath = "website/content/days/${dayEntry.slug}/photos/$filename"
@@ -249,33 +246,10 @@ class GitHubRepository(
         }
     }
 
-    private fun compressImage(context: Context, uri: Uri): ByteArray {
+    private fun readOriginalImage(context: Context, uri: Uri): ByteArray {
         val inputStream = context.contentResolver.openInputStream(uri)
             ?: throw IllegalArgumentException("Cannot open image URI")
-        val bitmap = BitmapFactory.decodeStream(inputStream)
-        inputStream.close()
-
-        val maxDimension = 1920
-        val scale = if (bitmap.width > bitmap.height) {
-            maxDimension.toFloat() / bitmap.width
-        } else {
-            maxDimension.toFloat() / bitmap.height
-        }
-
-        val scaledBitmap = if (scale < 1) {
-            Bitmap.createScaledBitmap(
-                bitmap,
-                (bitmap.width * scale).toInt(),
-                (bitmap.height * scale).toInt(),
-                true
-            )
-        } else {
-            bitmap
-        }
-
-        val outputStream = ByteArrayOutputStream()
-        scaledBitmap.compress(Bitmap.CompressFormat.JPEG, 85, outputStream)
-        return outputStream.toByteArray()
+        return inputStream.use { it.readBytes() }
     }
 
     private fun parseDaySummary(slug: String, markdown: String, sha: String): DaySummary {
