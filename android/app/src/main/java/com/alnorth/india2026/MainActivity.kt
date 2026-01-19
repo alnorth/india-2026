@@ -8,6 +8,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -18,6 +19,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.alnorth.india2026.model.SubmissionResult
+import com.alnorth.india2026.ui.composables.BranchFooter
 import com.alnorth.india2026.ui.screens.CrashScreen
 import com.alnorth.india2026.ui.screens.DayListScreen
 import com.alnorth.india2026.ui.screens.EditDayScreen
@@ -75,10 +77,16 @@ fun India2026App() {
     val navController = rememberNavController()
     var submissionResult: SubmissionResult? = null
 
-    NavHost(
-        navController = navController,
-        startDestination = "day_list"
-    ) {
+    Scaffold(
+        bottomBar = {
+            BranchFooter()
+        }
+    ) { paddingValues ->
+        NavHost(
+            navController = navController,
+            startDestination = "day_list",
+            modifier = Modifier.fillMaxSize()
+        ) {
         // Day List Screen
         composable("day_list") {
             DayListScreen(
@@ -153,6 +161,7 @@ fun India2026App() {
                     navController.navigate("edit_day/$slug?branchName=$branchName")
                 }
             )
+        }
         }
     }
 }
