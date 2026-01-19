@@ -90,3 +90,22 @@ data class PullRequest(
     @SerializedName("head") val head: PullRequestHead,
     @SerializedName("user") val user: GitHubUser
 )
+
+// For fetching GitHub releases
+data class GitHubRelease(
+    @SerializedName("id") val id: Long,
+    @SerializedName("tag_name") val tag_name: String,
+    @SerializedName("name") val name: String,
+    @SerializedName("html_url") val html_url: String,
+    @SerializedName("body") val body: String?,
+    @SerializedName("prerelease") val prerelease: Boolean,
+    @SerializedName("created_at") val created_at: String,
+    @SerializedName("published_at") val published_at: String?,
+    @SerializedName("assets") val assets: List<ReleaseAsset>
+)
+
+data class ReleaseAsset(
+    @SerializedName("name") val name: String,
+    @SerializedName("browser_download_url") val browser_download_url: String,
+    @SerializedName("size") val size: Long
+)

@@ -102,6 +102,25 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Upload Master Build to Release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        id: upload_master_release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: master-build-${{ github.run_number }}
+          name: Master Build ${{ github.run_number }}
+          body: |
+            Automated master build
+            Commit: ${{ github.sha }}
+            Short SHA: ${{ github.sha }}
+          files: |
+            android/app/build/outputs/apk/debug/app-debug.apk
+            android/app/build/outputs/apk/release/app-release.apk
+          prerelease: false
+          draft: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Comment on PR with direct APK links
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
