@@ -12,7 +12,6 @@ data class DayEntry(
     val fileSha: String,        // Git SHA of index.md (required for updates)
     val date: String,           // YYYY-MM-DD (read-only, from existing file)
     val title: String,          // Read-only, from existing file
-    val distance: Int,          // Read-only, from existing file
     val location: String,       // Read-only, from existing file
     val status: String,         // Editable: planned, in-progress, completed
     val stravaId: String?,      // Editable: Strava activity ID
@@ -23,7 +22,6 @@ data class DayEntry(
         appendLine("---")
         appendLine("date: $date")
         appendLine("title: \"$title\"")
-        appendLine("distance: $distance")
         appendLine("location: \"$location\"")
         appendLine("status: $status")
         stravaId?.let { if (it.isNotEmpty()) appendLine("stravaId: \"$it\"") }
@@ -33,7 +31,7 @@ data class DayEntry(
         if (allPhotos.isNotEmpty()) {
             appendLine("photos:")
             allPhotos.forEach { photo ->
-                appendLine("  - filename: \"${photo.filename}\"")
+                appendLine("  - file: \"${photo.filename}\"")
                 appendLine("    caption: \"${photo.caption}\"")
             }
         }
@@ -50,7 +48,6 @@ data class DaySummary(
     val title: String,
     val date: String,
     val status: String,
-    val distance: Int,
     val location: String
 )
 

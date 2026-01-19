@@ -130,17 +130,28 @@ class GitHubRepository(
 
     suspend fun getAmplifyPreviewUrl(prNumber: Int): String? {
         return try {
-            val comments = api.getPullRequestComments(owner, repo, prNumber)
+            // Use issue comments endpoint - Amplify bot posts to general comments, not review comments
+            val comments = api.getIssueComments(owner, repo, prNumber)
             val amplifyComment = comments.find {
-                it.user.login == "aws-amplify-us-east-1" ||
+                it.user.login.startsWith("aws-amplify-") ||
                 it.body.contains("amplifyapp.com")
             }
             amplifyComment?.body?.let { body ->
-                val regex = Regex("""https://[a-z0-9-]+\.amplifyapp\.com[^\s\)]*""")
+                // Match URLs like https://pr-24.did5czmmf06mc.amplifyapp.com
+                val regex = Regex("""https://[a-z0-9.-]+\.amplifyapp\.com[^\s\)]*""")
                 regex.find(body)?.value
             }
         } catch (e: Exception) {
             null
+        }
+    }
+
+    // Fetch open pull requests created by the app
+    suspend fun getAppCreatedPullRequests(): Result<List<com.alnorth.india2026.api.PullRequest>> = runCatching {
+        val allPRs = api.getPullRequests(owner, repo, state = "open")
+        // Filter PRs created by the app - branches start with "app/"
+        allPRs.filter { pr ->
+            pr.head.ref.startsWith("app/")
         }
     }
 
@@ -181,7 +192,6 @@ class GitHubRepository(
             title = frontmatter["title"] ?: slug,
             date = frontmatter["date"] ?: "",
             status = frontmatter["status"] ?: "planned",
-            distance = frontmatter["distance"]?.toIntOrNull() ?: 0,
             location = frontmatter["location"] ?: ""
         )
     }
@@ -195,7 +205,6 @@ class GitHubRepository(
             fileSha = sha,
             date = frontmatter["date"] ?: "",
             title = frontmatter["title"] ?: slug,
-            distance = frontmatter["distance"]?.toIntOrNull() ?: 0,
             location = frontmatter["location"] ?: "",
             status = frontmatter["status"] ?: "planned",
             stravaId = frontmatter["stravaId"]?.ifEmpty { null },
@@ -242,9 +251,9 @@ class GitHubRepository(
             val trimmed = line.trim()
             when {
                 trimmed == "photos:" -> inPhotos = true
-                inPhotos && trimmed.startsWith("- filename:") -> {
+                inPhotos && trimmed.startsWith("- file:") -> {
                     currentFilename = trimmed
-                        .substringAfter("filename:")
+                        .substringAfter("file:")
                         .trim()
                         .removeSurrounding("\"")
                 }
@@ -256,7 +265,7 @@ class GitHubRepository(
                     photos.add(PhotoWithCaption(currentFilename!!, caption))
                     currentFilename = null
                 }
-                inPhotos && !trimmed.startsWith("-") && !trimmed.startsWith("filename:") &&
+                inPhotos && !trimmed.startsWith("-") && !trimmed.startsWith("file:") &&
                 !trimmed.startsWith("caption:") && trimmed.isNotEmpty() && !trimmed.startsWith(" ") -> {
                     // We've left the photos section
                     break
@@ -271,7 +280,6 @@ class GitHubRepository(
             appendLine("## ${entry.title}")
             appendLine()
             appendLine("**Date:** ${entry.date}")
-            appendLine("**Distance:** ${entry.distance} km")
             appendLine("**Location:** ${entry.location}")
             appendLine("**Status:** ${entry.status}")
             appendLine()

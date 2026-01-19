@@ -76,7 +76,7 @@ india-2026/                       # Monorepo root
 - **Rendering**: Maps over days to create summary cards
 - **Features**:
   - Status badges (planned/in-progress/completed)
-  - Date, distance, location
+  - Date, location
   - Links to individual day pages
 
 #### `src/pages/day/[slug].astro` (Day Page)
@@ -86,7 +86,7 @@ india-2026/                       # Monorepo root
   - `getStaticPaths()` returns all slugs for static generation
   - `getDayBySlug(slug)` loads specific day content
 - **Sections**:
-  - Header with title, date, distance, location, status
+  - Header with title, date, location, status
   - GPX route map (if GPX file exists)
   - Strava embed (if Strava ID provided)
   - Markdown content (writeup)
@@ -188,7 +188,6 @@ interface PhotoMetadata {
 interface DayMetadata {
   date: string           // YYYY-MM-DD format
   title: string          // e.g., "Day 1: Kanyakumari to Nagercoil"
-  distance?: number      // kilometers
   location?: string      // e.g., "Tamil Nadu"
   status: 'planned' | 'in-progress' | 'completed'
   stravaId?: string      // Strava activity ID
@@ -235,7 +234,6 @@ interface Day extends DayMetadata {
 ---
 date: 2026-01-20
 title: "Day 1: Kanyakumari to Nagercoil"
-distance: 45
 location: "Kanyakumari, Tamil Nadu"
 status: planned
 stravaId: ""

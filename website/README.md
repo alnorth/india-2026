@@ -72,7 +72,6 @@ Each day's `index.md` file should have frontmatter with metadata followed by you
 ---
 date: 2026-01-20
 title: "Day 1: Kanyakumari to Nagercoil"
-distance: 45
 location: "Kanyakumari, Tamil Nadu"
 status: planned
 stravaId: ""
@@ -97,7 +96,6 @@ Your writeup about the day goes here. Before the ride, this might just be a brie
 
 - **date** (required): Date in YYYY-MM-DD format
 - **title** (required): Title for the day (e.g., "Day 1: Kanyakumari to Nagercoil")
-- **distance** (optional): Distance in kilometers
 - **location** (optional): Location or region
 - **status** (required): One of:
   - `planned` - Route is planned but not yet ridden
@@ -185,7 +183,6 @@ Note: You'll need to update `website/src/components/StravaEmbed.tsx` to include 
    ---
    date: 2026-01-21
    title: "Day 2: Nagercoil to Trivandrum"
-   distance: 85
    location: "Tamil Nadu to Kerala"
    status: planned
    stravaId: ""

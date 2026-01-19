@@ -21,10 +21,15 @@ import com.alnorth.india2026.model.SubmissionResult
 import com.alnorth.india2026.ui.screens.CrashScreen
 import com.alnorth.india2026.ui.screens.DayListScreen
 import com.alnorth.india2026.ui.screens.EditDayScreen
+import com.alnorth.india2026.ui.screens.PullRequestListScreen
 import com.alnorth.india2026.ui.screens.ResultScreen
 import com.alnorth.india2026.ui.theme.India2026Theme
 
 class MainActivity : ComponentActivity() {
+    companion object {
+        private const val TAG = "MainActivity"
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -79,6 +84,9 @@ fun India2026App() {
             DayListScreen(
                 onDaySelected = { slug ->
                     navController.navigate("edit_day/$slug")
+                },
+                onViewPullRequests = {
+                    navController.navigate("pull_requests")
                 }
             )
         }
@@ -117,6 +125,21 @@ fun India2026App() {
                     }
                 )
             }
+        }
+
+        // Pull Request List Screen
+        composable("pull_requests") {
+            PullRequestListScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+                onPullRequestSelected = { result ->
+                    submissionResult = result
+                    navController.navigate("result") {
+                        popUpTo("pull_requests") { inclusive = false }
+                    }
+                }
+            )
         }
     }
 }

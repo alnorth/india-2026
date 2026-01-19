@@ -78,3 +78,15 @@ data class PullRequestComment(
 data class GitHubUser(
     @SerializedName("login") val login: String
 )
+
+// For listing pull requests
+data class PullRequest(
+    val number: Int,
+    val title: String,
+    val html_url: String,
+    val state: String,
+    val created_at: String,
+    val updated_at: String,
+    val head: PullRequestHead,
+    val user: GitHubUser
+)

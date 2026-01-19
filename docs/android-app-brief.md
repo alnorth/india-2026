@@ -615,7 +615,6 @@ class GitHubRepository(
             title = frontmatter["title"] ?: slug,
             date = frontmatter["date"] ?: "",
             status = frontmatter["status"] ?: "planned",
-            distance = frontmatter["distance"]?.toIntOrNull() ?: 0,
             location = frontmatter["location"] ?: ""
         )
     }
@@ -629,7 +628,6 @@ class GitHubRepository(
             fileSha = sha,
             date = frontmatter["date"] ?: "",
             title = frontmatter["title"] ?: slug,
-            distance = frontmatter["distance"]?.toIntOrNull() ?: 0,
             location = frontmatter["location"] ?: "",
             status = frontmatter["status"] ?: "planned",
             stravaId = frontmatter["stravaId"]?.ifEmpty { null },
@@ -696,7 +694,6 @@ class GitHubRepository(
             appendLine("## ${entry.title}")
             appendLine()
             appendLine("**Date:** ${entry.date}")
-            appendLine("**Distance:** ${entry.distance} km")
             appendLine("**Location:** ${entry.location}")
             appendLine("**Status:** ${entry.status}")
             appendLine()
@@ -720,7 +717,6 @@ data class DaySummary(
     val title: String,
     val date: String,
     val status: String,
-    val distance: Int,
     val location: String
 )
 
@@ -777,7 +773,6 @@ data class DayEntry(
     val fileSha: String,        // Git SHA of index.md (required for updates)
     val date: String,           // YYYY-MM-DD (read-only, from existing file)
     val title: String,          // Read-only, from existing file
-    val distance: Int,          // Read-only, from existing file
     val location: String,       // Read-only, from existing file
     val status: String,         // Editable: planned, in-progress, completed
     val stravaId: String?,      // Editable: Strava activity ID
@@ -788,7 +783,6 @@ data class DayEntry(
         appendLine("---")
         appendLine("date: $date")
         appendLine("title: \"$title\"")
-        appendLine("distance: $distance")
         appendLine("location: \"$location\"")
         appendLine("status: $status")
         stravaId?.let { if (it.isNotEmpty()) appendLine("stravaId: \"$it\"") }
@@ -818,7 +812,6 @@ Photos are stored in the frontmatter as a YAML list:
 ---
 date: 2026-01-20
 title: "Day 1: Alamparai to Pondicherry"
-distance: 45
 location: "Tamil Nadu"
 status: completed
 stravaId: "1234567890"
@@ -1085,7 +1078,7 @@ fun DayCard(
             }
             Spacer(Modifier.height(4.dp))
             Text(
-                text = "${day.date} • ${day.distance} km • ${day.location}",
+                text = "${day.date} • ${day.location}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.outline
             )
@@ -1206,7 +1199,7 @@ fun EditDayScreen(
                             )
                             Spacer(Modifier.height(4.dp))
                             Text(
-                                text = "${state.dayEntry.date} • ${state.dayEntry.distance} km • ${state.dayEntry.location}",
+                                text = "${state.dayEntry.date} • ${state.dayEntry.location}",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.outline
                             )
@@ -1866,6 +1859,6 @@ This Android app provides a streamlined way to update the India 2026 cycle tour 
 5. **Preview links** - Direct access to PR and Amplify preview URLs
 6. **Automated builds** - GitHub Actions compiles APK on changes to `android/`
 
-The app is designed for single-user private use, with minimal overhead and maximum convenience for updating the site while traveling. Day entries (title, date, distance, location) are pre-configured in the repository - the app only edits existing days, it does not create new ones.
+The app is designed for single-user private use, with minimal overhead and maximum convenience for updating the site while traveling. Day entries (title, date, location) are pre-configured in the repository - the app only edits existing days, it does not create new ones.
 
 Photo captions are stored in the frontmatter of each day's `index.md` file, allowing the website to display them alongside images.
