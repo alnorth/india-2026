@@ -193,15 +193,7 @@ class DayListViewModel : ViewModel() {
             _uiState.value = DayListUiState.Loading
 
             try {
-                // Check if token is configured
-                if (com.alnorth.india2026.BuildConfig.GITHUB_TOKEN.isEmpty()) {
-                    _uiState.value = DayListUiState.Error(
-                        "GitHub token not configured. Please check the app setup."
-                    )
-                    return@launch
-                }
-
-                // Access repository only after token check
+                // Don't check token - just try the request and let it fail if needed
                 val repository = ApiClient.repository
 
                 repository.getAllDays()
