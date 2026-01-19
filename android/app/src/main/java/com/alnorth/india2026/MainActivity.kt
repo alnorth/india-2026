@@ -26,6 +26,10 @@ import com.alnorth.india2026.ui.screens.ResultScreen
 import com.alnorth.india2026.ui.theme.India2026Theme
 
 class MainActivity : ComponentActivity() {
+    companion object {
+        private const val TAG = "MainActivity"
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
