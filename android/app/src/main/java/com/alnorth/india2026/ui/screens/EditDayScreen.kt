@@ -20,6 +20,7 @@ import com.alnorth.india2026.api.ApiClient
 import com.alnorth.india2026.model.DayEntry
 import com.alnorth.india2026.model.SelectedPhoto
 import com.alnorth.india2026.model.SubmissionResult
+import com.alnorth.india2026.ui.composables.ExistingPhotosSection
 import com.alnorth.india2026.ui.composables.PhotoPickerSection
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -129,6 +130,18 @@ fun EditDayScreen(
                     )
 
                     Divider()
+
+                    // Existing photos (from PR branch)
+                    ExistingPhotosSection(
+                        slug = state.dayEntry.slug,
+                        branchName = branchName,
+                        existingPhotos = state.dayEntry.photos
+                    )
+
+                    if (state.dayEntry.photos.isNotEmpty()) {
+                        Spacer(Modifier.height(16.dp))
+                        Divider()
+                    }
 
                     // Photo picker
                     PhotoPickerSection(

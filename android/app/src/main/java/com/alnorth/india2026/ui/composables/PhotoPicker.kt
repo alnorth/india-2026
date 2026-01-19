@@ -21,6 +21,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.alnorth.india2026.model.PhotoWithCaption
 import com.alnorth.india2026.model.SelectedPhoto
 
 @Composable
@@ -166,6 +167,95 @@ fun PhotoWithCaptionCard(
                     contentDescription = "Remove",
                     tint = MaterialTheme.colorScheme.error
                 )
+            }
+        }
+    }
+}
+
+@Composable
+fun ExistingPhotosSection(
+    slug: String,
+    branchName: String?,
+    existingPhotos: List<PhotoWithCaption>,
+    modifier: Modifier = Modifier
+) {
+    if (existingPhotos.isEmpty()) return
+
+    val branch = branchName ?: "master"
+
+    Column(modifier = modifier) {
+        Text(
+            text = "Existing Photos (${existingPhotos.size})",
+            style = MaterialTheme.typography.titleMedium
+        )
+
+        Spacer(Modifier.height(8.dp))
+
+        LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.heightIn(max = 400.dp)
+        ) {
+            itemsIndexed(existingPhotos) { index, photo ->
+                ExistingPhotoCard(
+                    slug = slug,
+                    branch = branch,
+                    photo = photo,
+                    photoNumber = index + 1
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ExistingPhotoCard(
+    slug: String,
+    branch: String,
+    photo: PhotoWithCaption,
+    photoNumber: Int
+) {
+    val photoUrl = "https://raw.githubusercontent.com/alnorth/india-2026/$branch/website/content/days/$slug/photos/${photo.filename}"
+
+    Card(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(8.dp),
+            verticalAlignment = Alignment.Top
+        ) {
+            // Photo thumbnail
+            AsyncImage(
+                model = photoUrl,
+                contentDescription = photo.caption,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(80.dp)
+                    .clip(RoundedCornerShape(8.dp))
+            )
+
+            Spacer(Modifier.width(12.dp))
+
+            // Caption (read-only)
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Photo $photoNumber",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                if (photo.caption.isNotEmpty()) {
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = photo.caption,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                } else {
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = "No caption",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
             }
         }
     }
