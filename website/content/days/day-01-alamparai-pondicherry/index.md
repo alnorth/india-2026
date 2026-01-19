@@ -9,7 +9,7 @@ photos:
   - file: "photo-2.jpg"
     caption: ""
   - file: "photo-3.jpg"
-    caption: ""
+    caption: "yassss"
   - file: "photo-4.jpg"
     caption: "A test "
 ---
