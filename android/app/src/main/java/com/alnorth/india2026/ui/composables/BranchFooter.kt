@@ -25,6 +25,7 @@ fun BranchFooter(
     val context = LocalContext.current
     val branchName = BuildConfig.BRANCH_NAME
     val actionUrl = BuildConfig.BUILD_ACTION_URL
+    val commitSha = BuildConfig.COMMIT_SHA.take(7)
 
     // Determine color based on branch name
     val textColor = if (branchName == "master" || branchName == "main") {
@@ -47,7 +48,7 @@ fun BranchFooter(
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = "Built from: $branchName",
+            text = "Built from: $branchName @ $commitSha",
             style = MaterialTheme.typography.bodySmall,
             color = textColor,
             textAlign = TextAlign.Center

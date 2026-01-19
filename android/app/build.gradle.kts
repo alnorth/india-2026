@@ -48,6 +48,11 @@ android {
             "BUILD_ACTION_URL",
             "\"${System.getenv("BUILD_ACTION_URL") ?: ""}\""
         )
+        buildConfigField(
+            "String",
+            "COMMIT_SHA",
+            "\"${System.getenv("BUILD_COMMIT_SHA") ?: "unknown"}\""
+        )
     }
 
     // Load keystore properties
