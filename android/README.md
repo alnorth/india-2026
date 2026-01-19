@@ -7,7 +7,6 @@ A private Android app for updating the India 2026 cycle tour website while on th
 - **Day Selection**: Browse and select existing day entries from the GitHub repository
 - **Day Editing**: Update status, Strava activity ID, and markdown content
 - **Photo Upload**: Select multiple photos from device gallery with captions
-- **Automatic Compression**: Images are automatically compressed for web delivery
 - **GitHub Integration**: Creates pull requests automatically with preview links
 - **Amplify Preview**: Polls for and displays Amplify preview URLs
 
