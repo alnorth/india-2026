@@ -144,6 +144,15 @@ class GitHubRepository(
         }
     }
 
+    // Fetch open pull requests created by the app
+    suspend fun getAppCreatedPullRequests(): Result<List<com.alnorth.india2026.api.PullRequest>> = runCatching {
+        val allPRs = api.getPullRequests(owner, repo, state = "open")
+        // Filter PRs created by the app - branches start with "app/"
+        allPRs.filter { pr ->
+            pr.head.ref.startsWith("app/")
+        }
+    }
+
     private fun compressImage(context: Context, uri: Uri): ByteArray {
         val inputStream = context.contentResolver.openInputStream(uri)
             ?: throw IllegalArgumentException("Cannot open image URI")

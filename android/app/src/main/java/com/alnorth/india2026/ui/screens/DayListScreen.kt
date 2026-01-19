@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -26,7 +27,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun DayListScreen(
     viewModel: DayListViewModel = viewModel(),
-    onDaySelected: (String) -> Unit
+    onDaySelected: (String) -> Unit,
+    onViewPullRequests: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -39,6 +41,9 @@ fun DayListScreen(
             TopAppBar(
                 title = { Text("India 2026 - Select Day") },
                 actions = {
+                    IconButton(onClick = onViewPullRequests) {
+                        Icon(Icons.Default.List, contentDescription = "View Pull Requests")
+                    }
                     if (uiState is DayListUiState.Success) {
                         IconButton(onClick = { viewModel.loadDays() }) {
                             Icon(Icons.Default.Refresh, contentDescription = "Refresh")
