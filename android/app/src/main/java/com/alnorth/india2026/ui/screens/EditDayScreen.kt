@@ -135,10 +135,11 @@ fun EditDayScreen(
                     ExistingPhotosSection(
                         slug = state.dayEntry.slug,
                         branchName = branchName,
-                        existingPhotos = state.dayEntry.photos
+                        existingPhotos = state.editedExistingPhotos,
+                        onCaptionChanged = viewModel::updateExistingPhotoCaption
                     )
 
-                    if (state.dayEntry.photos.isNotEmpty()) {
+                    if (state.editedExistingPhotos.isNotEmpty()) {
                         Spacer(Modifier.height(16.dp))
                         Divider()
                     }
@@ -310,6 +311,7 @@ class EditDayViewModel : ViewModel() {
                             stravaId = entry.stravaId ?: "",
                             content = entry.content,
                             newPhotos = emptyList(),
+                            editedExistingPhotos = entry.photos,
                             hasChanges = false
                         )
                     }
@@ -342,6 +344,17 @@ class EditDayViewModel : ViewModel() {
         updateEditingState { it.copy(newPhotos = photos) }
     }
 
+    fun updateExistingPhotoCaption(index: Int, newCaption: String) {
+        val current = _uiState.value
+        if (current is EditDayUiState.Editing) {
+            val updatedPhotos = current.editedExistingPhotos.toMutableList()
+            if (index in updatedPhotos.indices) {
+                updatedPhotos[index] = updatedPhotos[index].copy(caption = newCaption)
+                updateEditingState { it.copy(editedExistingPhotos = updatedPhotos) }
+            }
+        }
+    }
+
     private fun updateEditingState(update: (EditDayUiState.Editing) -> EditDayUiState.Editing) {
         val current = _uiState.value
         if (current is EditDayUiState.Editing) {
@@ -350,7 +363,8 @@ class EditDayViewModel : ViewModel() {
                 updated.status != orig.status ||
                 updated.stravaId != (orig.stravaId ?: "") ||
                 updated.content != orig.content ||
-                updated.newPhotos.isNotEmpty()
+                updated.newPhotos.isNotEmpty() ||
+                updated.editedExistingPhotos != orig.photos
             } ?: false
             _uiState.value = updated.copy(hasChanges = hasChanges)
         }
@@ -365,7 +379,8 @@ class EditDayViewModel : ViewModel() {
                 val updatedEntry = current.dayEntry.copy(
                     status = current.status,
                     stravaId = current.stravaId.ifEmpty { null },
-                    content = current.content
+                    content = current.content,
+                    photos = current.editedExistingPhotos
                 )
 
                 val repository = ApiClient.repository
@@ -420,6 +435,7 @@ sealed class EditDayUiState {
         val stravaId: String,
         val content: String,
         val newPhotos: List<SelectedPhoto>,
+        val editedExistingPhotos: List<PhotoWithCaption>,
         val hasChanges: Boolean
     ) : EditDayUiState()
     data class Submitting(val message: String) : EditDayUiState()

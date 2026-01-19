@@ -177,6 +177,7 @@ fun ExistingPhotosSection(
     slug: String,
     branchName: String?,
     existingPhotos: List<PhotoWithCaption>,
+    onCaptionChanged: (Int, String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     if (existingPhotos.isEmpty()) return
@@ -200,7 +201,10 @@ fun ExistingPhotosSection(
                     slug = slug,
                     branch = branch,
                     photo = photo,
-                    photoNumber = index + 1
+                    photoNumber = index + 1,
+                    onCaptionChanged = { newCaption ->
+                        onCaptionChanged(index, newCaption)
+                    }
                 )
             }
         }
@@ -212,7 +216,8 @@ fun ExistingPhotoCard(
     slug: String,
     branch: String,
     photo: PhotoWithCaption,
-    photoNumber: Int
+    photoNumber: Int,
+    onCaptionChanged: (String) -> Unit
 ) {
     val photoUrl = "https://raw.githubusercontent.com/alnorth/india-2026/$branch/website/content/days/$slug/photos/${photo.filename}"
 
@@ -235,27 +240,17 @@ fun ExistingPhotoCard(
 
             Spacer(Modifier.width(12.dp))
 
-            // Caption (read-only)
+            // Caption input (editable)
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "Photo $photoNumber",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary
+                OutlinedTextField(
+                    value = photo.caption,
+                    onValueChange = onCaptionChanged,
+                    label = { Text("Caption") },
+                    placeholder = { Text("Describe this photo...") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = false,
+                    maxLines = 2
                 )
-                if (photo.caption.isNotEmpty()) {
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        text = photo.caption,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                } else {
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        text = "No caption",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.outline
-                    )
-                }
             }
         }
     }
