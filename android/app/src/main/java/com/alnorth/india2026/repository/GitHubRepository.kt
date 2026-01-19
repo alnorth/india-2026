@@ -142,7 +142,7 @@ class GitHubRepository(
         val uploadedPhotos = mutableListOf<PhotoWithCaption>()
 
         newPhotos.forEachIndexed { index, selectedPhoto ->
-            val photoBytes = compressImage(context, selectedPhoto.uri)
+            val photoBytes = readOriginalImage(context, selectedPhoto.uri)
             val photoNum = existingPhotoCount + index + 1
             val filename = "photo-$photoNum.jpg"
             val photoPath = "website/content/days/${dayEntry.slug}/photos/$filename"
