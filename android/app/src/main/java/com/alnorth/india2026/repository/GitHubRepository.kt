@@ -33,10 +33,18 @@ class GitHubRepository(
     }
 
     // Fetch a specific day's full content
-    suspend fun getDayBySlug(slug: String): Result<DayEntry> = runCatching {
-        val indexContent = api.getFileContent(owner, repo, "website/content/days/$slug/index.md")
+    suspend fun getDayBySlug(slug: String, branchName: String? = null): Result<DayEntry> = runCatching {
+        val indexContent = if (branchName != null) {
+            api.getFileContent(owner, repo, "website/content/days/$slug/index.md", branchName)
+        } else {
+            api.getFileContent(owner, repo, "website/content/days/$slug/index.md")
+        }
         val markdown = String(Base64.decode(indexContent.content, Base64.DEFAULT))
-        parseDayEntry(slug, markdown, indexContent.sha)
+
+        // Get actual photos from the branch's directory listing
+        val photos = getPhotosFromDirectory(slug, branchName)
+
+        parseDayEntry(slug, markdown, indexContent.sha, photos)
     }
 
     // Update an existing day entry
@@ -116,12 +124,98 @@ class GitHubRepository(
         )
     }
 
-    private suspend fun getExistingPhotoCount(slug: String): Int {
+    // Commit changes to an existing PR branch
+    suspend fun commitToExistingBranch(
+        branchName: String,
+        dayEntry: DayEntry,
+        newPhotos: List<SelectedPhoto>,
+        context: Context
+    ): Result<SubmissionResult> = runCatching {
+
+        // 1. Get the PR number for this branch
+        val allPRs = api.getPullRequests(owner, repo, state = "open")
+        val pr = allPRs.find { it.head.ref == branchName }
+            ?: throw IllegalArgumentException("No open PR found for branch $branchName")
+
+        // 2. Upload new photos first (to get filenames)
+        val existingPhotoCount = getExistingPhotoCount(dayEntry.slug, branchName)
+        val uploadedPhotos = mutableListOf<PhotoWithCaption>()
+
+        newPhotos.forEachIndexed { index, selectedPhoto ->
+            val photoBytes = compressImage(context, selectedPhoto.uri)
+            val photoNum = existingPhotoCount + index + 1
+            val filename = "photo-$photoNum.jpg"
+            val photoPath = "website/content/days/${dayEntry.slug}/photos/$filename"
+
+            api.createOrUpdateFile(
+                owner, repo, photoPath,
+                UpdateFileRequest(
+                    message = "Add photo $photoNum",
+                    content = Base64.encodeToString(photoBytes, Base64.NO_WRAP),
+                    branch = branchName
+                )
+            )
+
+            uploadedPhotos.add(PhotoWithCaption(filename, selectedPhoto.caption))
+        }
+
+        // 3. Update markdown file with photo captions
+        val markdownContent = dayEntry.toMarkdown(uploadedPhotos)
+        val markdownPath = "website/content/days/${dayEntry.slug}/index.md"
+
+        // Get the current file SHA from the branch
+        val currentFile = api.getFileContent(owner, repo, markdownPath, branchName)
+
+        api.createOrUpdateFile(
+            owner, repo, markdownPath,
+            UpdateFileRequest(
+                message = "Update ${dayEntry.title}",
+                content = Base64.encodeToString(
+                    markdownContent.toByteArray(),
+                    Base64.NO_WRAP
+                ),
+                branch = branchName,
+                sha = currentFile.sha  // Use SHA from the branch, not master
+            )
+        )
+
+        SubmissionResult(
+            prNumber = pr.number,
+            prUrl = pr.html_url,
+            branchName = branchName
+        )
+    }
+
+    private suspend fun getExistingPhotoCount(slug: String, branchName: String? = null): Int {
         return try {
-            val contents = api.getDirectoryContents(owner, repo, "website/content/days/$slug/photos")
+            val contents = if (branchName != null) {
+                api.getDirectoryContents(owner, repo, "website/content/days/$slug/photos", branchName)
+            } else {
+                api.getDirectoryContents(owner, repo, "website/content/days/$slug/photos")
+            }
             contents.count { it.type == "file" && it.name.endsWith(".jpg") }
         } catch (e: Exception) {
             0  // No photos directory yet
+        }
+    }
+
+    // Get photos from directory listing on a specific branch
+    private suspend fun getPhotosFromDirectory(slug: String, branchName: String?): List<PhotoWithCaption> {
+        return try {
+            // Get actual files from the photos directory
+            val photoFiles = if (branchName != null) {
+                api.getDirectoryContents(owner, repo, "website/content/days/$slug/photos", branchName)
+            } else {
+                api.getDirectoryContents(owner, repo, "website/content/days/$slug/photos")
+            }
+
+            // Filter for image files and sort by name
+            photoFiles
+                .filter { it.type == "file" && (it.name.endsWith(".jpg") || it.name.endsWith(".jpeg") || it.name.endsWith(".png")) }
+                .sortedBy { it.name }
+                .map { PhotoWithCaption(filename = it.name, caption = "") }
+        } catch (e: Exception) {
+            emptyList()  // No photos directory yet
         }
     }
 
@@ -170,10 +264,17 @@ class GitHubRepository(
         )
     }
 
-    private fun parseDayEntry(slug: String, markdown: String, sha: String): DayEntry {
+    private fun parseDayEntry(slug: String, markdown: String, sha: String, directoryPhotos: List<PhotoWithCaption>): DayEntry {
         val frontmatter = extractFrontmatter(markdown)
-        val photos = parsePhotos(markdown)
+        val photoCaptions = parsePhotoCaptions(markdown)
         val content = markdown.substringAfter("---").substringAfter("---").trim()
+
+        // Merge directory photos with captions from markdown
+        val photos = directoryPhotos.map { photo ->
+            val caption = photoCaptions[photo.filename] ?: ""
+            photo.copy(caption = caption)
+        }
+
         return DayEntry(
             slug = slug,
             fileSha = sha,
@@ -204,19 +305,20 @@ class GitHubRepository(
             }
     }
 
-    private fun parsePhotos(markdown: String): List<PhotoWithCaption> {
-        if (!markdown.startsWith("---")) return emptyList()
+    // Parse photo captions from markdown frontmatter
+    private fun parsePhotoCaptions(markdown: String): Map<String, String> {
+        if (!markdown.startsWith("---")) return emptyMap()
 
         val frontmatterSection = markdown
             .substringAfter("---")
             .substringBefore("---")
 
-        // Simple YAML list parser for photos
-        val photos = mutableListOf<PhotoWithCaption>()
+        // Simple YAML list parser for photo captions
+        val captions = mutableMapOf<String, String>()
         var currentFilename: String? = null
 
         val inPhotosSection = frontmatterSection.contains("photos:")
-        if (!inPhotosSection) return emptyList()
+        if (!inPhotosSection) return emptyMap()
 
         val lines = frontmatterSection.lines()
         var inPhotos = false
@@ -236,7 +338,7 @@ class GitHubRepository(
                         .substringAfter("caption:")
                         .trim()
                         .removeSurrounding("\"")
-                    photos.add(PhotoWithCaption(currentFilename!!, caption))
+                    captions[currentFilename!!] = caption
                     currentFilename = null
                 }
                 inPhotos && !trimmed.startsWith("-") && !trimmed.startsWith("file:") &&
@@ -246,7 +348,7 @@ class GitHubRepository(
                 }
             }
         }
-        return photos
+        return captions
     }
 
     private fun buildPrBody(entry: DayEntry, newPhotoCount: Int): String {

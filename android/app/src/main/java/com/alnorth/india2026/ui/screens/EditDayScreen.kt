@@ -18,8 +18,10 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.alnorth.india2026.api.ApiClient
 import com.alnorth.india2026.model.DayEntry
+import com.alnorth.india2026.model.PhotoWithCaption
 import com.alnorth.india2026.model.SelectedPhoto
 import com.alnorth.india2026.model.SubmissionResult
+import com.alnorth.india2026.ui.composables.ExistingPhotosSection
 import com.alnorth.india2026.ui.composables.PhotoPickerSection
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -30,6 +32,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun EditDayScreen(
     slug: String,
+    branchName: String? = null,
     viewModel: EditDayViewModel = viewModel(),
     onNavigateBack: () -> Unit,
     onNavigateToResult: (SubmissionResult) -> Unit
@@ -37,8 +40,8 @@ fun EditDayScreen(
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
-    LaunchedEffect(slug) {
-        viewModel.loadDay(slug)
+    LaunchedEffect(slug, branchName) {
+        viewModel.loadDay(slug, branchName)
     }
 
     Scaffold(
@@ -129,6 +132,19 @@ fun EditDayScreen(
 
                     Divider()
 
+                    // Existing photos (from PR branch)
+                    ExistingPhotosSection(
+                        slug = state.dayEntry.slug,
+                        branchName = branchName,
+                        existingPhotos = state.editedExistingPhotos,
+                        onCaptionChanged = viewModel::updateExistingPhotoCaption
+                    )
+
+                    if (state.editedExistingPhotos.isNotEmpty()) {
+                        Spacer(Modifier.height(16.dp))
+                        Divider()
+                    }
+
                     // Photo picker
                     PhotoPickerSection(
                         selectedPhotos = state.newPhotos,
@@ -143,7 +159,7 @@ fun EditDayScreen(
                         modifier = Modifier.fillMaxWidth(),
                         enabled = state.hasChanges
                     ) {
-                        Text("Create Pull Request")
+                        Text(if (branchName != null) "Commit Changes" else "Create Pull Request")
                     }
 
                     if (!state.hasChanges) {
@@ -212,7 +228,7 @@ fun EditDayScreen(
                             OutlinedButton(onClick = onNavigateBack) {
                                 Text("Go Back")
                             }
-                            Button(onClick = { viewModel.loadDay(slug) }) {
+                            Button(onClick = { viewModel.loadDay(slug, branchName) }) {
                                 Text("Try Again")
                             }
                         }
@@ -268,8 +284,10 @@ class EditDayViewModel : ViewModel() {
     val uiState: StateFlow<EditDayUiState> = _uiState.asStateFlow()
 
     private var originalEntry: DayEntry? = null
+    private var existingBranchName: String? = null
 
-    fun loadDay(slug: String) {
+    fun loadDay(slug: String, branchName: String? = null) {
+        existingBranchName = branchName
         viewModelScope.launch {
             _uiState.value = EditDayUiState.Loading
 
@@ -285,7 +303,7 @@ class EditDayViewModel : ViewModel() {
                 // Access repository only after token check
                 val repository = ApiClient.repository
 
-                repository.getDayBySlug(slug)
+                repository.getDayBySlug(slug, branchName)
                     .onSuccess { entry ->
                         originalEntry = entry
                         _uiState.value = EditDayUiState.Editing(
@@ -294,6 +312,7 @@ class EditDayViewModel : ViewModel() {
                             stravaId = entry.stravaId ?: "",
                             content = entry.content,
                             newPhotos = emptyList(),
+                            editedExistingPhotos = entry.photos,
                             hasChanges = false
                         )
                     }
@@ -326,6 +345,17 @@ class EditDayViewModel : ViewModel() {
         updateEditingState { it.copy(newPhotos = photos) }
     }
 
+    fun updateExistingPhotoCaption(index: Int, newCaption: String) {
+        val current = _uiState.value
+        if (current is EditDayUiState.Editing) {
+            val updatedPhotos = current.editedExistingPhotos.toMutableList()
+            if (index in updatedPhotos.indices) {
+                updatedPhotos[index] = updatedPhotos[index].copy(caption = newCaption)
+                updateEditingState { it.copy(editedExistingPhotos = updatedPhotos) }
+            }
+        }
+    }
+
     private fun updateEditingState(update: (EditDayUiState.Editing) -> EditDayUiState.Editing) {
         val current = _uiState.value
         if (current is EditDayUiState.Editing) {
@@ -334,7 +364,8 @@ class EditDayViewModel : ViewModel() {
                 updated.status != orig.status ||
                 updated.stravaId != (orig.stravaId ?: "") ||
                 updated.content != orig.content ||
-                updated.newPhotos.isNotEmpty()
+                updated.newPhotos.isNotEmpty() ||
+                updated.editedExistingPhotos != orig.photos
             } ?: false
             _uiState.value = updated.copy(hasChanges = hasChanges)
         }
@@ -346,27 +377,48 @@ class EditDayViewModel : ViewModel() {
 
         viewModelScope.launch {
             try {
-                _uiState.value = EditDayUiState.Submitting("Creating branch...")
-
                 val updatedEntry = current.dayEntry.copy(
                     status = current.status,
                     stravaId = current.stravaId.ifEmpty { null },
-                    content = current.content
+                    content = current.content,
+                    photos = current.editedExistingPhotos
                 )
-
-                _uiState.value = EditDayUiState.Submitting("Uploading photos...")
 
                 val repository = ApiClient.repository
 
-                repository.updateDayEntry(updatedEntry, current.newPhotos, context)
-                    .onSuccess { result ->
-                        _uiState.value = EditDayUiState.Success(result)
-                    }
-                    .onFailure { e ->
-                        _uiState.value = EditDayUiState.Error(
-                            e.message ?: "Failed to create pull request"
-                        )
-                    }
+                if (existingBranchName != null) {
+                    // Commit to existing PR branch
+                    _uiState.value = EditDayUiState.Submitting("Uploading photos...")
+
+                    repository.commitToExistingBranch(
+                        existingBranchName!!,
+                        updatedEntry,
+                        current.newPhotos,
+                        context
+                    )
+                        .onSuccess { result ->
+                            _uiState.value = EditDayUiState.Success(result)
+                        }
+                        .onFailure { e ->
+                            _uiState.value = EditDayUiState.Error(
+                                e.message ?: "Failed to commit changes"
+                            )
+                        }
+                } else {
+                    // Create new PR
+                    _uiState.value = EditDayUiState.Submitting("Creating branch...")
+                    _uiState.value = EditDayUiState.Submitting("Uploading photos...")
+
+                    repository.updateDayEntry(updatedEntry, current.newPhotos, context)
+                        .onSuccess { result ->
+                            _uiState.value = EditDayUiState.Success(result)
+                        }
+                        .onFailure { e ->
+                            _uiState.value = EditDayUiState.Error(
+                                e.message ?: "Failed to create pull request"
+                            )
+                        }
+                }
             } catch (e: Exception) {
                 _uiState.value = EditDayUiState.Error(
                     "Error: ${e.message ?: "Unknown error occurred"}"
@@ -384,6 +436,7 @@ sealed class EditDayUiState {
         val stravaId: String,
         val content: String,
         val newPhotos: List<SelectedPhoto>,
+        val editedExistingPhotos: List<PhotoWithCaption>,
         val hasChanges: Boolean
     ) : EditDayUiState()
     data class Submitting(val message: String) : EditDayUiState()

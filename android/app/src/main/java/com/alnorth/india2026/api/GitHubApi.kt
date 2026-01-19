@@ -12,12 +12,30 @@ interface GitHubApi {
         @Path("path", encoded = true) path: String
     ): List<GitHubContent>
 
+    // Fetch directory contents from a specific branch
+    @GET("repos/{owner}/{repo}/contents/{path}")
+    suspend fun getDirectoryContents(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Path("path", encoded = true) path: String,
+        @Query("ref") ref: String
+    ): List<GitHubContent>
+
     // Fetch a specific file's contents
     @GET("repos/{owner}/{repo}/contents/{path}")
     suspend fun getFileContent(
         @Path("owner") owner: String,
         @Path("repo") repo: String,
         @Path("path", encoded = true) path: String
+    ): GitHubContent
+
+    // Fetch a specific file's contents from a specific branch
+    @GET("repos/{owner}/{repo}/contents/{path}")
+    suspend fun getFileContent(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Path("path", encoded = true) path: String,
+        @Query("ref") ref: String
     ): GitHubContent
 
     @GET("repos/{owner}/{repo}/branches/{branch}")

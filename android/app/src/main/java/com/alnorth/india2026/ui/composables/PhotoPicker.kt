@@ -21,6 +21,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.alnorth.india2026.model.PhotoWithCaption
 import com.alnorth.india2026.model.SelectedPhoto
 
 @Composable
@@ -165,6 +166,90 @@ fun PhotoWithCaptionCard(
                     Icons.Default.Close,
                     contentDescription = "Remove",
                     tint = MaterialTheme.colorScheme.error
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ExistingPhotosSection(
+    slug: String,
+    branchName: String?,
+    existingPhotos: List<PhotoWithCaption>,
+    onCaptionChanged: (Int, String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    if (existingPhotos.isEmpty()) return
+
+    val branch = branchName ?: "master"
+
+    Column(modifier = modifier) {
+        Text(
+            text = "Existing Photos (${existingPhotos.size})",
+            style = MaterialTheme.typography.titleMedium
+        )
+
+        Spacer(Modifier.height(8.dp))
+
+        LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.heightIn(max = 400.dp)
+        ) {
+            itemsIndexed(existingPhotos) { index, photo ->
+                ExistingPhotoCard(
+                    slug = slug,
+                    branch = branch,
+                    photo = photo,
+                    photoNumber = index + 1,
+                    onCaptionChanged = { newCaption ->
+                        onCaptionChanged(index, newCaption)
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ExistingPhotoCard(
+    slug: String,
+    branch: String,
+    photo: PhotoWithCaption,
+    photoNumber: Int,
+    onCaptionChanged: (String) -> Unit
+) {
+    val photoUrl = "https://raw.githubusercontent.com/alnorth/india-2026/$branch/website/content/days/$slug/photos/${photo.filename}"
+
+    Card(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(8.dp),
+            verticalAlignment = Alignment.Top
+        ) {
+            // Photo thumbnail
+            AsyncImage(
+                model = photoUrl,
+                contentDescription = photo.caption,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(80.dp)
+                    .clip(RoundedCornerShape(8.dp))
+            )
+
+            Spacer(Modifier.width(12.dp))
+
+            // Caption input (editable)
+            Column(modifier = Modifier.weight(1f)) {
+                OutlinedTextField(
+                    value = photo.caption,
+                    onValueChange = onCaptionChanged,
+                    label = { Text("Caption") },
+                    placeholder = { Text("Describe this photo...") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = false,
+                    maxLines = 2
                 )
             }
         }

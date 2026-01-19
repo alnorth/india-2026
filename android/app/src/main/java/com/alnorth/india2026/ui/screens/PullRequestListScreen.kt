@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -30,7 +31,8 @@ import java.time.format.DateTimeFormatter
 fun PullRequestListScreen(
     viewModel: PullRequestListViewModel = viewModel(),
     onNavigateBack: () -> Unit,
-    onPullRequestSelected: (com.alnorth.india2026.model.SubmissionResult) -> Unit
+    onPullRequestSelected: (com.alnorth.india2026.model.SubmissionResult) -> Unit,
+    onEditDay: (slug: String, branchName: String) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -118,6 +120,13 @@ fun PullRequestListScreen(
                                         branchName = pr.head.ref
                                     )
                                     onPullRequestSelected(submissionResult)
+                                },
+                                onEdit = {
+                                    // Extract slug from branch name (e.g., "app/day-1-1234567890" -> "day-1")
+                                    val slug = pr.head.ref
+                                        .removePrefix("app/")
+                                        .substringBeforeLast("-")
+                                    onEditDay(slug, pr.head.ref)
                                 }
                             )
                         }
@@ -162,23 +171,37 @@ fun PullRequestListScreen(
 @Composable
 fun PullRequestCard(
     pullRequest: PullRequest,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onEdit: () -> Unit
 ) {
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth()
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = pullRequest.title,
-                style = MaterialTheme.typography.titleMedium
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = "#${pullRequest.number} • ${formatDate(pullRequest.created_at)}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.outline
-            )
+        Row(
+            modifier = Modifier.padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = pullRequest.title,
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = "#${pullRequest.number} • ${formatDate(pullRequest.created_at)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.outline
+                )
+            }
+            IconButton(onClick = onEdit) {
+                Icon(
+                    Icons.Default.Edit,
+                    contentDescription = "Edit day",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
         }
     }
 }
