@@ -1,7 +1,6 @@
 ---
 date: 2026-01-30
 title: "Day 5: Chettinadu"
-distance:
 location: "Tamil Nadu"
 status: planned
 stravaId: ""

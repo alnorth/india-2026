@@ -1,7 +1,6 @@
 ---
 date: 2026-02-01
 title: "Day 7: Thenni"
-distance:
 location: "Tamil Nadu"
 status: planned
 stravaId: ""
