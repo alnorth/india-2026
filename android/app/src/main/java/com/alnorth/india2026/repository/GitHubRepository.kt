@@ -242,9 +242,9 @@ class GitHubRepository(
             val trimmed = line.trim()
             when {
                 trimmed == "photos:" -> inPhotos = true
-                inPhotos && trimmed.startsWith("- filename:") -> {
+                inPhotos && trimmed.startsWith("- file:") -> {
                     currentFilename = trimmed
-                        .substringAfter("filename:")
+                        .substringAfter("file:")
                         .trim()
                         .removeSurrounding("\"")
                 }
@@ -256,7 +256,7 @@ class GitHubRepository(
                     photos.add(PhotoWithCaption(currentFilename!!, caption))
                     currentFilename = null
                 }
-                inPhotos && !trimmed.startsWith("-") && !trimmed.startsWith("filename:") &&
+                inPhotos && !trimmed.startsWith("-") && !trimmed.startsWith("file:") &&
                 !trimmed.startsWith("caption:") && trimmed.isNotEmpty() && !trimmed.startsWith(" ") -> {
                     // We've left the photos section
                     break

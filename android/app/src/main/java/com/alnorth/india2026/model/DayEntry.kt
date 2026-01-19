@@ -33,7 +33,7 @@ data class DayEntry(
         if (allPhotos.isNotEmpty()) {
             appendLine("photos:")
             allPhotos.forEach { photo ->
-                appendLine("  - filename: \"${photo.filename}\"")
+                appendLine("  - file: \"${photo.filename}\"")
                 appendLine("    caption: \"${photo.caption}\"")
             }
         }
