@@ -30,9 +30,10 @@ fun DayListScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    LaunchedEffect(Unit) {
-        viewModel.loadDays()
-    }
+    // TEMP: Disabled to test if screen renders without loading
+    // LaunchedEffect(Unit) {
+    //     viewModel.loadDays()
+    // }
 
     Scaffold(
         topBar = {
