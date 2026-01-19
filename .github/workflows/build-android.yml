@@ -106,19 +106,21 @@ jobs:
             const releaseUrl = `https://github.com/${repo.owner}/${repo.repo}/releases/download/${tagName}/app-release.apk`;
 
             // Post comment
-            const comment = `## 📱 Android APK Build Complete!
-
-The APK files are ready for direct download:
-
-- 🐛 **Debug APK**: [app-debug.apk](${debugUrl})
-- 🚀 **Release APK**: [app-release.apk](${releaseUrl})
-
-Click the links above to download the APK files directly (no zip extraction needed).
-
-**Build Details:**
-- Commit: \`${context.sha.substring(0, 7)}\`
-- Workflow Run: [View Details](https://github.com/${repo.owner}/${repo.repo}/actions/runs/${context.runId})
-- Release Tag: \`${tagName}\``;
+            const comment = [
+              '## 📱 Android APK Build Complete!',
+              '',
+              'The APK files are ready for direct download:',
+              '',
+              `- 🐛 **Debug APK**: [app-debug.apk](${debugUrl})`,
+              `- 🚀 **Release APK**: [app-release.apk](${releaseUrl})`,
+              '',
+              'Click the links above to download the APK files directly (no zip extraction needed).',
+              '',
+              '**Build Details:**',
+              `- Commit: \`${context.sha.substring(0, 7)}\``,
+              `- Workflow Run: [View Details](https://github.com/${repo.owner}/${repo.repo}/actions/runs/${context.runId})`,
+              `- Release Tag: \`${tagName}\``
+            ].join('\n');
 
             // Check if we already commented
             const comments = await github.rest.issues.listComments({
