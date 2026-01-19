@@ -52,14 +52,14 @@ jobs:
       - name: Build Debug APK
         working-directory: android
         env:
-          BUILD_BRANCH_NAME: ${{ github.ref_name }}
+          BUILD_BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
           BUILD_ACTION_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: ./gradlew assembleDebug
 
       - name: Build Release APK
         working-directory: android
         env:
-          BUILD_BRANCH_NAME: ${{ github.ref_name }}
+          BUILD_BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
           BUILD_ACTION_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: ./gradlew assembleRelease
 
