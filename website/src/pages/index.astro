@@ -4,8 +4,58 @@ import { getAllDays } from '@/lib/days';
 import { format } from 'date-fns';
 import RouteMapThumbnail from '@/components/RouteMapThumbnail';
 import { kmToMiles, metersToFeet } from '@/lib/unitConversions';
+import fs from 'fs';
+import path from 'path';
+import sharp from 'sharp';
 
 const days = getAllDays();
+
+// Generate photo thumbnails for each day (first 5 photos only)
+const MAX_THUMBNAILS = 5;
+const dayThumbnails = new Map<string, string[]>();
+
+for (const day of days) {
+  const photosDir = path.join(process.cwd(), 'content', 'days', day.slug, 'photos');
+  const optimizedDir = path.join(process.cwd(), 'dist', '_images', day.slug);
+  const thumbnails: string[] = [];
+
+  if (fs.existsSync(photosDir)) {
+    fs.mkdirSync(optimizedDir, { recursive: true });
+
+    const photoFiles = fs
+      .readdirSync(photosDir)
+      .filter((file) => /\.(jpg|jpeg|png|gif|webp)$/i.test(file))
+      .sort()
+      .slice(0, MAX_THUMBNAILS);
+
+    for (const filename of photoFiles) {
+      const photoPath = path.join(photosDir, filename);
+      const thumbnailFilename = `${path.parse(filename).name}-thumb.webp`;
+      const thumbnailPath = path.join(optimizedDir, thumbnailFilename);
+      const thumbnailPublicPath = `/_images/${day.slug}/${thumbnailFilename}`;
+
+      try {
+        // Only generate if doesn't exist
+        if (!fs.existsSync(thumbnailPath)) {
+          await sharp(photoPath)
+            .resize(400, 400, {
+              fit: 'cover',
+              position: 'center',
+            })
+            .webp({ quality: 80 })
+            .toFile(thumbnailPath);
+        }
+        thumbnails.push(thumbnailPublicPath);
+      } catch (error) {
+        console.warn(`Could not optimize ${filename}:`, error);
+      }
+    }
+  }
+
+  if (thumbnails.length > 0) {
+    dayThumbnails.set(day.slug, thumbnails);
+  }
+}
 ---
 
 <BaseLayout>
@@ -83,6 +133,24 @@ const days = getAllDays();
                     {metersToFeet(day.gpxStats.elevationLoss)} ft
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* Photo Thumbnails */}
+            {dayThumbnails.has(day.slug) && (
+              <div class="flex gap-2 mt-3 pt-3 border-t border-sand-300 dark:border-earth-700 overflow-hidden">
+                {dayThumbnails.get(day.slug)!.map((thumbnail, index) => (
+                  <div class="w-12 h-12 flex-shrink-0 rounded overflow-hidden">
+                    <img
+                      src={thumbnail}
+                      alt={`Photo ${index + 1}`}
+                      width="48"
+                      height="48"
+                      loading="lazy"
+                      class="w-full h-full object-cover"
+                    />
+                  </div>
+                ))}
               </div>
             )}
           </div>
