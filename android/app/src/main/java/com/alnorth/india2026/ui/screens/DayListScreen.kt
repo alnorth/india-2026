@@ -28,106 +28,21 @@ fun DayListScreen(
     viewModel: DayListViewModel = viewModel(),
     onDaySelected: (String) -> Unit
 ) {
-    val uiState by viewModel.uiState.collectAsState()
-
-    // TEMP: Disabled to test if screen renders without loading
-    // LaunchedEffect(Unit) {
-    //     viewModel.loadDays()
-    // }
-
+    // TEMP: Bypass ViewModel entirely to test rendering
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("India 2026 - Select Day") },
-                actions = {
-                    if (uiState is DayListUiState.Success) {
-                        IconButton(onClick = { viewModel.loadDays() }) {
-                            Icon(Icons.Default.Refresh, contentDescription = "Refresh")
-                        }
-                    }
-                }
+                title = { Text("India 2026 - Select Day") }
             )
         }
     ) { padding ->
-        when (val state = uiState) {
-            is DayListUiState.Loading -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        CircularProgressIndicator()
-                        Text("Loading days from GitHub...")
-                    }
-                }
-            }
-
-            is DayListUiState.Success -> {
-                if (state.days.isEmpty()) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(padding),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            "No days found",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.outline
-                        )
-                    }
-                } else {
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(padding),
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(state.days) { day ->
-                            DayCard(
-                                day = day,
-                                onClick = { onDaySelected(day.slug) }
-                            )
-                        }
-                    }
-                }
-            }
-
-            is DayListUiState.Error -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding)
-                        .padding(16.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        Text(
-                            "Error loading days",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                        Text(
-                            state.message,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.outline,
-                            textAlign = TextAlign.Center
-                        )
-                        Button(onClick = { viewModel.loadDays() }) {
-                            Text("Retry")
-                        }
-                    }
-                }
-            }
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            contentAlignment = Alignment.Center
+        ) {
+            Text("DayListScreen rendering test")
         }
     }
 }
