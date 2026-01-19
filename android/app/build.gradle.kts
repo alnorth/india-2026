@@ -36,6 +36,23 @@ android {
             "GITHUB_TOKEN",
             "\"${localProperties.getProperty("GITHUB_TOKEN", "")}\""
         )
+
+        // Build metadata for footer
+        buildConfigField(
+            "String",
+            "BRANCH_NAME",
+            "\"${System.getenv("BUILD_BRANCH_NAME") ?: "unknown"}\""
+        )
+        buildConfigField(
+            "String",
+            "BUILD_ACTION_URL",
+            "\"${System.getenv("BUILD_ACTION_URL") ?: ""}\""
+        )
+        buildConfigField(
+            "String",
+            "COMMIT_SHA",
+            "\"${System.getenv("BUILD_COMMIT_SHA") ?: "unknown"}\""
+        )
     }
 
     // Load keystore properties
