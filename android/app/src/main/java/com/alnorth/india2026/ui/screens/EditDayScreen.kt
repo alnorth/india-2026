@@ -22,6 +22,7 @@ import com.alnorth.india2026.model.PhotoWithCaption
 import com.alnorth.india2026.model.SelectedPhoto
 import com.alnorth.india2026.model.SubmissionResult
 import com.alnorth.india2026.ui.composables.ExistingPhotosSection
+import com.alnorth.india2026.ui.composables.MarkdownEditor
 import com.alnorth.india2026.ui.composables.PhotoPickerSection
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -118,16 +119,13 @@ fun EditDayScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    // Content (editable)
-                    OutlinedTextField(
+                    // Content (editable) - WYSIWYM Markdown Editor
+                    MarkdownEditor(
                         value = state.content,
                         onValueChange = viewModel::updateContent,
-                        label = { Text("Content (Markdown)") },
-                        placeholder = { Text("Write about your day...") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(200.dp),
-                        maxLines = 10
+                        placeholder = "Write about your day...",
+                        label = "Content (Markdown)",
+                        modifier = Modifier.fillMaxWidth()
                     )
 
                     Divider()
