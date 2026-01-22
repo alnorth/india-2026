@@ -8,8 +8,8 @@ import type { DayRoute } from './FullRouteMap'
 // Color palette for different days - distinct, colorblind-friendly colors
 const DAY_COLORS = [
   '#e63946', // Red
-  '#f4a261', // Orange
-  '#e9c46a', // Yellow
+  '#fb5607', // Vivid orange (more saturated for visibility)
+  '#00b4d8', // Cyan (replaces yellow for better map contrast)
   '#2a9d8f', // Teal
   '#264653', // Dark blue
   '#7209b7', // Purple
