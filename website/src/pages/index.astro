@@ -3,12 +3,22 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 import { getAllDays } from '@/lib/days';
 import { format } from 'date-fns';
 import RouteMapThumbnail from '@/components/RouteMapThumbnail';
+import FullRouteMap from '@/components/FullRouteMap';
 import { kmToMiles, metersToFeet } from '@/lib/unitConversions';
 import fs from 'fs';
 import path from 'path';
 import sharp from 'sharp';
 
 const days = getAllDays();
+
+// Build routes array for full route map
+const fullRoutes = days
+  .filter((day) => day.gpxPath)
+  .map((day, index) => ({
+    dayNumber: index + 1,
+    label: `Day ${index + 1}`,
+    gpxPath: day.gpxPath!,
+  }));
 
 // Generate photo thumbnails for each day (first 5 photos only)
 const MAX_THUMBNAILS = 5;
@@ -67,6 +77,16 @@ for (const day of days) {
         Each day includes the planned route, ride details, and stories from the road.
       </p>
     </div>
+
+    {/* Full Route Map */}
+    {fullRoutes.length > 0 && (
+      <div class="mb-8">
+        <h3 class="text-xl font-semibold mb-4">Complete Route</h3>
+        <div class="h-96 w-full rounded-lg overflow-hidden shadow-lg">
+          <FullRouteMap client:load routes={fullRoutes} />
+        </div>
+      </div>
+    )}
 
     <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
       {days.map((day) => (
