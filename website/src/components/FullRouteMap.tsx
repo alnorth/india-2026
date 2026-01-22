@@ -6,6 +6,7 @@ export interface DayRoute {
   dayNumber: number
   label: string
   gpxPath: string
+  slug: string
 }
 
 interface FullRouteMapProps {

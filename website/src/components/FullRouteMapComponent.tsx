@@ -1,6 +1,6 @@
-import { MapContainer, TileLayer, Polyline, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, Polyline, useMap, Tooltip } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useCallback } from 'react'
 import type { LatLngTuple } from 'leaflet'
 import { parseGPX, trackPointsToCoordinates } from '@/lib/gpxUtils'
 import type { DayRoute } from './FullRouteMap'
@@ -30,6 +30,7 @@ interface FullRouteMapComponentProps {
 interface RouteData {
   dayNumber: number
   label: string
+  slug: string
   coordinates: LatLngTuple[]
   color: string
 }
@@ -58,7 +59,7 @@ export default function FullRouteMapComponent({
   const routeData: RouteData[] = useMemo(() => {
     return routes
       .filter(({ dayNumber }) => gpxDataMap.has(dayNumber))
-      .map(({ dayNumber, label }) => {
+      .map(({ dayNumber, label, slug }) => {
         const gpxData = gpxDataMap.get(dayNumber)!
         const trackPoints = parseGPX(gpxData)
         const coordinates = trackPointsToCoordinates(trackPoints)
@@ -66,11 +67,17 @@ export default function FullRouteMapComponent({
         return {
           dayNumber,
           label,
+          slug,
           coordinates,
           color: DAY_COLORS[colorIndex],
         }
       })
   }, [routes, gpxDataMap])
+
+  // Handle route click to navigate to day page
+  const handleRouteClick = useCallback((slug: string) => {
+    window.location.href = `/day/${slug}/`
+  }, [])
 
   // Combine all coordinates for fitting bounds
   const allCoordinates = useMemo(() => {
@@ -102,32 +109,26 @@ export default function FullRouteMapComponent({
             color={route.color}
             weight={4}
             opacity={0.9}
-          />
+            eventHandlers={{
+              click: () => handleRouteClick(route.slug),
+              mouseover: (e) => {
+                const layer = e.target
+                layer.setStyle({ weight: 6, opacity: 1 })
+                layer._path.style.cursor = 'pointer'
+              },
+              mouseout: (e) => {
+                const layer = e.target
+                layer.setStyle({ weight: 4, opacity: 0.9 })
+              },
+            }}
+          >
+            <Tooltip sticky>{route.label}</Tooltip>
+          </Polyline>
         ))}
         {allCoordinates.length > 0 && (
           <FitAllBounds allCoordinates={allCoordinates} />
         )}
       </MapContainer>
-
-      {/* Legend */}
-      <div className="absolute bottom-4 right-4 bg-white dark:bg-earth-800 rounded-lg shadow-lg p-3 z-[1000] max-h-48 overflow-y-auto">
-        <h4 className="text-xs font-semibold text-earth-900 dark:text-sand-100 mb-2">
-          Route Legend
-        </h4>
-        <div className="space-y-1">
-          {routeData.map((route) => (
-            <div key={route.dayNumber} className="flex items-center gap-2">
-              <div
-                className="w-4 h-1 rounded-sm flex-shrink-0"
-                style={{ backgroundColor: route.color }}
-              />
-              <span className="text-xs text-earth-700 dark:text-sand-300 whitespace-nowrap">
-                {route.label}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   )
 }
