@@ -104,22 +104,27 @@ if (fs.existsSync(photosDir)) {
   <div>
     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="photo-gallery">
       {photoData.map((photo, index) => (
-        <button
-          class="relative aspect-square overflow-hidden rounded-lg hover:opacity-90 transition-opacity cursor-pointer"
-          data-photo={photo.full}
-          data-index={index}
-          onclick={`window.dispatchEvent(new CustomEvent('openPhotoLightbox', { detail: { photo: '${photo.full}', index: ${index} }}))`}
-        >
-          <img
-            src={photo.thumbnail}
-            alt={photo.alt || photo.caption || `Photo ${index + 1}`}
-            width="400"
-            height="400"
-            loading="lazy"
-            decoding="async"
-            class="w-full h-full object-cover"
-          />
-        </button>
+        <div class="flex flex-col">
+          <button
+            class="relative aspect-square overflow-hidden rounded-lg hover:opacity-90 transition-opacity cursor-pointer"
+            data-photo={photo.full}
+            data-index={index}
+            onclick={`window.dispatchEvent(new CustomEvent('openPhotoLightbox', { detail: { photo: '${photo.full}', index: ${index} }}))`}
+          >
+            <img
+              src={photo.thumbnail}
+              alt={photo.alt || photo.caption || `Photo ${index + 1}`}
+              width="400"
+              height="400"
+              loading="lazy"
+              decoding="async"
+              class="w-full h-full object-cover"
+            />
+          </button>
+          {photo.caption && (
+            <p class="mt-2 text-sm text-earth-600 dark:text-sand-400">{photo.caption}</p>
+          )}
+        </div>
       ))}
     </div>
 
