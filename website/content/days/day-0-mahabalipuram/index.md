@@ -4,6 +4,7 @@ title: "Day 0: Mahabalipuram"
 location: "Tamil Nadu"
 status: planned
 stravaId: ""
+coordinates: "12.6186752,80.1936908"
 photos: []
 ---
 

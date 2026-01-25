@@ -3,7 +3,7 @@ date: 2026-01-24
 title: "Day -1: Mahabalipuram"
 location: "Tamil Nadu"
 status: completed
-coordinates: "12.6269,80.1927"
+coordinates: "12.6186752,80.1936908"
 photos:
   - file: "photo-1.jpg"
     caption: ""
