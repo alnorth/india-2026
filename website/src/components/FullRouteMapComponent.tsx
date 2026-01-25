@@ -162,7 +162,7 @@ export default function FullRouteMapComponent({
           <CircleMarker
             key={`marker-${marker.dayNumber}`}
             center={marker.position}
-            radius={8}
+            radius={6}
             fillColor={marker.color}
             fillOpacity={0.9}
             color="#ffffff"
@@ -171,12 +171,12 @@ export default function FullRouteMapComponent({
               click: () => handleRouteClick(marker.slug),
               mouseover: (e) => {
                 const layer = e.target
-                layer.setStyle({ radius: 10, fillOpacity: 1 })
+                layer.setStyle({ radius: 8, fillOpacity: 1 })
                 layer._path.style.cursor = 'pointer'
               },
               mouseout: (e) => {
                 const layer = e.target
-                layer.setStyle({ radius: 8, fillOpacity: 0.9 })
+                layer.setStyle({ radius: 6, fillOpacity: 0.9 })
               },
             }}
           >
