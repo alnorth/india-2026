@@ -51,6 +51,16 @@ fun MarkdownEditor(
     var textFieldValue by remember {
         mutableStateOf(TextFieldValue(value))
     }
+
+    // Sync external value changes (e.g., revert, loading different content)
+    // Only update if the change came from outside, not from our own typing
+    val currentText = textFieldValue.text
+    LaunchedEffect(value) {
+        if (value != currentText) {
+            textFieldValue = TextFieldValue(value)
+        }
+    }
+
     var showPreview by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
