@@ -22,8 +22,7 @@ const fullRoutes = days
     coordinates: day.parsedCoordinates,
   }));
 
-// Generate photo thumbnails for each day (first 5 photos only)
-const MAX_THUMBNAILS = 5;
+// Generate photo thumbnails for each day
 const dayThumbnails = new Map<string, string[]>();
 
 for (const day of days) {
@@ -37,8 +36,7 @@ for (const day of days) {
     const photoFiles = fs
       .readdirSync(photosDir)
       .filter((file) => /\.(jpg|jpeg|png|gif|webp)$/i.test(file))
-      .sort(naturalSort)
-      .slice(0, MAX_THUMBNAILS);
+      .sort(naturalSort);
 
     for (const filename of photoFiles) {
       const photoPath = path.join(photosDir, filename);
