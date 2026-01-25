@@ -63,7 +63,7 @@ india-2026/                       # Monorepo root
 └── README.md                     # Monorepo overview
 ```
 
-**Note**: This is now a monorepo structure. All website-specific files are in the `website/` subdirectory. The root level is prepared for future addition of an Android app.
+**Note**: This is a monorepo. The Android app lives in `android/` at the repository root. See the root `CLAUDE.md` for monorepo-level documentation.
 
 ## Component Architecture
 
@@ -405,10 +405,15 @@ AWS Amplify provides built-in GitHub integration:
 
 ### Adding New Metadata Fields
 
+**IMPORTANT**: The Android app also reads/writes frontmatter. If you add a field here but not in the Android app, the field will be **silently dropped** when users edit content from mobile. See root `CLAUDE.md` for the full checklist.
+
 1. Update `DayMetadata` interface in `src/lib/days.ts`
-2. Update example frontmatter in `content/days/example-day-01/index.md`
-3. Use in `src/pages/day/[slug].astro` or `src/pages/index.astro`
-4. Document in README.md
+2. Update `DayEntry` in `android/app/src/main/java/com/alnorth/india2026/model/DayEntry.kt`
+3. Update `extractFrontmatter()` in `android/.../repository/GitHubRepository.kt`
+4. Update `DayEntry.toMarkdown()` to serialize the new field
+5. Update example frontmatter in content files
+6. Use in `src/pages/day/[slug].astro` or `src/pages/index.astro`
+7. Document in README.md and root CLAUDE.md
 
 ### Adding New Data Sources
 

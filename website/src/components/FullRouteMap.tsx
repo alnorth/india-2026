@@ -5,8 +5,10 @@ const FullRouteMapComponent = lazy(() => import('./FullRouteMapComponent'))
 export interface DayRoute {
   dayNumber: number
   label: string
-  gpxPath: string
+  gpxPath?: string
   slug: string
+  // For days without GPX, show a marker at these coordinates
+  coordinates?: { lat: number; lng: number }
 }
 
 interface FullRouteMapProps {
@@ -18,13 +20,16 @@ export default function FullRouteMap({ routes }: FullRouteMapProps) {
   const [isClient, setIsClient] = useState(false)
   const [loadingCount, setLoadingCount] = useState(0)
 
+  // Routes with GPX files that need fetching
+  const gpxRoutes = routes.filter((r) => r.gpxPath)
+
   useEffect(() => {
     setIsClient(true)
-    setLoadingCount(routes.length)
+    setLoadingCount(gpxRoutes.length)
 
     // Fetch all GPX files in parallel
-    routes.forEach(({ dayNumber, gpxPath }) => {
-      fetch(gpxPath)
+    gpxRoutes.forEach(({ dayNumber, gpxPath }) => {
+      fetch(gpxPath!)
         .then((res) => res.text())
         .then((data) => {
           setGpxDataMap((prev) => {

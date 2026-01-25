@@ -11,14 +11,15 @@ import sharp from 'sharp';
 
 const days = getAllDays();
 
-// Build routes array for full route map
+// Build routes array for full route map (days with GPX or coordinates)
 const fullRoutes = days
-  .filter((day) => day.gpxPath)
+  .filter((day) => day.gpxPath || day.parsedCoordinates)
   .map((day, index) => ({
     dayNumber: index + 1,
-    label: `Day ${index + 1}`,
-    gpxPath: day.gpxPath!,
+    label: day.title,
+    gpxPath: day.gpxPath,
     slug: day.slug,
+    coordinates: day.parsedCoordinates,
   }));
 
 // Generate photo thumbnails for each day (first 5 photos only)

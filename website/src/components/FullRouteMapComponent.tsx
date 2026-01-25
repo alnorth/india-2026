@@ -1,4 +1,11 @@
-import { MapContainer, TileLayer, Polyline, useMap, Tooltip } from 'react-leaflet'
+import {
+  MapContainer,
+  TileLayer,
+  Polyline,
+  CircleMarker,
+  useMap,
+  Tooltip,
+} from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useEffect, useMemo, useCallback } from 'react'
 import type { LatLngTuple } from 'leaflet'
@@ -32,6 +39,14 @@ interface RouteData {
   label: string
   slug: string
   coordinates: LatLngTuple[]
+  color: string
+}
+
+interface MarkerData {
+  dayNumber: number
+  label: string
+  slug: string
+  position: LatLngTuple
   color: string
 }
 
@@ -74,15 +89,33 @@ export default function FullRouteMapComponent({
       })
   }, [routes, gpxDataMap])
 
+  // Create markers for days with coordinates but no GPX
+  const markerData: MarkerData[] = useMemo(() => {
+    return routes
+      .filter(({ gpxPath, coordinates }) => !gpxPath && coordinates)
+      .map(({ dayNumber, label, slug, coordinates }) => {
+        const colorIndex = (dayNumber - 1) % DAY_COLORS.length
+        return {
+          dayNumber,
+          label,
+          slug,
+          position: [coordinates!.lat, coordinates!.lng] as LatLngTuple,
+          color: DAY_COLORS[colorIndex],
+        }
+      })
+  }, [routes])
+
   // Handle route click to navigate to day page
   const handleRouteClick = useCallback((slug: string) => {
     window.location.href = `/day/${slug}/`
   }, [])
 
-  // Combine all coordinates for fitting bounds
+  // Combine all coordinates for fitting bounds (routes + markers)
   const allCoordinates = useMemo(() => {
-    return routeData.flatMap((route) => route.coordinates)
-  }, [routeData])
+    const routeCoords = routeData.flatMap((route) => route.coordinates)
+    const markerCoords = markerData.map((marker) => marker.position)
+    return [...routeCoords, ...markerCoords]
+  }, [routeData, markerData])
 
   // Default center (southern India)
   const center: LatLngTuple =
@@ -124,6 +157,31 @@ export default function FullRouteMapComponent({
           >
             <Tooltip sticky>{route.label}</Tooltip>
           </Polyline>
+        ))}
+        {markerData.map((marker) => (
+          <CircleMarker
+            key={`marker-${marker.dayNumber}`}
+            center={marker.position}
+            radius={8}
+            fillColor={marker.color}
+            fillOpacity={0.9}
+            color="#ffffff"
+            weight={2}
+            eventHandlers={{
+              click: () => handleRouteClick(marker.slug),
+              mouseover: (e) => {
+                const layer = e.target
+                layer.setStyle({ radius: 10, fillOpacity: 1 })
+                layer._path.style.cursor = 'pointer'
+              },
+              mouseout: (e) => {
+                const layer = e.target
+                layer.setStyle({ radius: 8, fillOpacity: 0.9 })
+              },
+            }}
+          >
+            <Tooltip>{marker.label}</Tooltip>
+          </CircleMarker>
         ))}
         {allCoordinates.length > 0 && (
           <FitAllBounds allCoordinates={allCoordinates} />
