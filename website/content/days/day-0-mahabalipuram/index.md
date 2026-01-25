@@ -2,12 +2,52 @@
 date: 2026-01-25
 title: "Day 0: Mahabalipuram"
 location: "Tamil Nadu"
-status: planned
-stravaId: ""
-coordinates: "12.6186752,80.1936908"
-photos: []
+status: in-progress
+photos:
+  - file: "photo-1.jpg"
+    caption: ""
+  - file: "photo-10.jpg"
+    caption: ""
+  - file: "photo-11.jpg"
+    caption: ""
+  - file: "photo-12.jpg"
+    caption: ""
+  - file: "photo-13.jpg"
+    caption: ""
+  - file: "photo-14.jpg"
+    caption: ""
+  - file: "photo-15.jpg"
+    caption: ""
+  - file: "photo-16.jpg"
+    caption: ""
+  - file: "photo-17.jpg"
+    caption: ""
+  - file: "photo-18.jpg"
+    caption: ""
+  - file: "photo-2.jpg"
+    caption: ""
+  - file: "photo-3.jpg"
+    caption: ""
+  - file: "photo-4.jpg"
+    caption: ""
+  - file: "photo-5.jpg"
+    caption: ""
+  - file: "photo-6.jpg"
+    caption: ""
+  - file: "photo-7.jpg"
+    caption: ""
+  - file: "photo-8.jpg"
+    caption: ""
+  - file: "photo-9.jpg"
+    caption: ""
+  - file: "photo-19.jpg"
+    caption: ""
+  - file: "photo-20.jpg"
+    caption: ""
+  - file: "photo-21.jpg"
+    caption: ""
+  - file: "photo-22.jpg"
+    caption: ""
 ---
 
-## Arrival
 
-Arriving in Mahabalipuram, the ancient port city and UNESCO World Heritage Site. Taking time to explore the famous Shore Temple and rock-cut monuments before the cycling journey begins.
