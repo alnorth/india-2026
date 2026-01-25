@@ -48,7 +48,7 @@ fun MarkdownEditor(
     placeholder: String = "Write your content in markdown...",
     label: String = "Content (Markdown)"
 ) {
-    var textFieldValue by remember(value) {
+    var textFieldValue by remember {
         mutableStateOf(TextFieldValue(value))
     }
     var showPreview by remember { mutableStateOf(false) }
