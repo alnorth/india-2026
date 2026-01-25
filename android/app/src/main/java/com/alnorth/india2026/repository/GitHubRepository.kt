@@ -325,6 +325,7 @@ class GitHubRepository(
             location = frontmatter["location"] ?: "",
             status = frontmatter["status"] ?: "planned",
             stravaId = frontmatter["stravaId"]?.ifEmpty { null },
+            coordinates = frontmatter["coordinates"]?.ifEmpty { null },
             content = content,
             photos = photos
         )

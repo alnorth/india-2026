@@ -119,6 +119,16 @@ if (!day) {
         </section>
       )}
 
+      {/* Location Map for days without GPX but with coordinates */}
+      {!day.gpxPath && day.parsedCoordinates && (
+        <section class="mb-8">
+          <h2 class="text-2xl font-bold mb-4">Location</h2>
+          <div class="h-96 rounded-lg overflow-hidden shadow-md">
+            <GPXMap client:load coordinates={day.parsedCoordinates} />
+          </div>
+        </section>
+      )}
+
       {day.stravaId && (
         <section class="mb-8">
           <h2 class="text-2xl font-bold mb-4">Ride Stats</h2>

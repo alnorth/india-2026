@@ -18,7 +18,13 @@ export interface DayMetadata {
   location?: string
   status: 'planned' | 'in-progress' | 'completed'
   stravaId?: string
+  coordinates?: string // Format: "lat,lng" e.g. "12.6269,80.1927"
   photos?: PhotoMetadata[]
+}
+
+export interface ParsedCoordinates {
+  lat: number
+  lng: number
 }
 
 export interface Day extends DayMetadata {
@@ -28,6 +34,7 @@ export interface Day extends DayMetadata {
   photos?: string[]
   photoMetadata?: Map<string, PhotoMetadata>
   gpxStats?: GPXStats
+  parsedCoordinates?: ParsedCoordinates
 }
 
 export function getAllDays(): Day[] {
@@ -104,6 +111,19 @@ export function getDayBySlug(slug: string): Day | null {
     })
   }
 
+  // Parse coordinates string into lat/lng object
+  let parsedCoordinates: ParsedCoordinates | undefined
+  if (metadata.coordinates) {
+    const parts = metadata.coordinates.split(',')
+    if (parts.length === 2) {
+      const lat = parseFloat(parts[0].trim())
+      const lng = parseFloat(parts[1].trim())
+      if (!isNaN(lat) && !isNaN(lng)) {
+        parsedCoordinates = { lat, lng }
+      }
+    }
+  }
+
   return {
     slug,
     ...(data as DayMetadata),
@@ -112,6 +132,7 @@ export function getDayBySlug(slug: string): Day | null {
     photos: photos.length > 0 ? photos : undefined,
     photoMetadata,
     gpxStats,
+    parsedCoordinates,
   }
 }
 

@@ -15,6 +15,7 @@ data class DayEntry(
     val location: String,       // Read-only, from existing file
     val status: String,         // Editable: planned, in-progress, completed
     val stravaId: String?,      // Editable: Strava activity ID
+    val coordinates: String?,   // Optional: "lat,lng" format for days without GPX
     val content: String,        // Editable: markdown content
     val photos: List<PhotoWithCaption>  // Existing photos with captions
 ) {
@@ -25,6 +26,7 @@ data class DayEntry(
         appendLine("location: \"$location\"")
         appendLine("status: $status")
         stravaId?.let { if (it.isNotEmpty()) appendLine("stravaId: \"$it\"") }
+        coordinates?.let { if (it.isNotEmpty()) appendLine("coordinates: \"$it\"") }
 
         // Combine existing photos with new photos
         val allPhotos = photos + newPhotos
