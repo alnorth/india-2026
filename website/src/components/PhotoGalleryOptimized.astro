@@ -3,7 +3,7 @@ import PhotoLightbox from './PhotoLightbox';
 import fs from 'fs';
 import path from 'path';
 import sharp from 'sharp';
-import { getDayBySlug } from '../lib/days';
+import { getDayBySlug, naturalSort } from '../lib/days';
 
 interface Props {
   slug: string;
@@ -34,7 +34,7 @@ if (fs.existsSync(photosDir)) {
   const photoFiles = fs
     .readdirSync(photosDir)
     .filter((file) => /\.(jpg|jpeg|png|gif|webp)$/i.test(file))
-    .sort();
+    .sort(naturalSort);
 
   // Process images with Sharp
   for (const filename of photoFiles) {

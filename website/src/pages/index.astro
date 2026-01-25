@@ -1,6 +1,6 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import { getAllDays } from '@/lib/days';
+import { getAllDays, naturalSort } from '@/lib/days';
 import { format } from 'date-fns';
 import RouteMapThumbnail from '@/components/RouteMapThumbnail';
 import FullRouteMap from '@/components/FullRouteMap';
@@ -36,7 +36,7 @@ for (const day of days) {
     const photoFiles = fs
       .readdirSync(photosDir)
       .filter((file) => /\.(jpg|jpeg|png|gif|webp)$/i.test(file))
-      .sort();
+      .sort(naturalSort);
 
     for (const filename of photoFiles) {
       const photoPath = path.join(photosDir, filename);
