@@ -66,7 +66,7 @@ export default function PhotoLightbox({ photos, captions }: PhotoLightboxProps) 
         &times;
       </button>
       <button
-        className="absolute left-4 top-1/2 -translate-y-1/2 text-white text-4xl hover:text-gray-300 z-10"
+        className="absolute left-0 top-1/2 -translate-y-1/2 text-white text-5xl hover:text-gray-300 hover:bg-white/10 z-10 px-6 py-16 rounded-r-lg transition-colors"
         onClick={(e) => {
           e.stopPropagation()
           prevPhoto()
@@ -76,7 +76,7 @@ export default function PhotoLightbox({ photos, captions }: PhotoLightboxProps) 
         ‹
       </button>
       <button
-        className="absolute right-4 top-1/2 -translate-y-1/2 text-white text-4xl hover:text-gray-300 z-10"
+        className="absolute right-0 top-1/2 -translate-y-1/2 text-white text-5xl hover:text-gray-300 hover:bg-white/10 z-10 px-6 py-16 rounded-l-lg transition-colors"
         onClick={(e) => {
           e.stopPropagation()
           nextPhoto()
