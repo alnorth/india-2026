@@ -5,6 +5,9 @@ import android.net.Uri
 import android.util.Base64
 import com.alnorth.india2026.api.*
 import com.alnorth.india2026.model.*
+import com.alnorth.india2026.util.RetryConfig
+import com.alnorth.india2026.util.RetryResult
+import com.alnorth.india2026.util.withRetry
 
 class GitHubRepository(
     private val api: GitHubApi
@@ -52,7 +55,8 @@ class GitHubRepository(
         dayEntry: DayEntry,
         newPhotos: List<SelectedPhoto>,
         context: Context,
-        onProgress: (current: Int, total: Int) -> Unit = { _, _ -> }
+        onProgress: (progress: UploadProgress) -> Unit = { _ -> },
+        startFromIndex: Int = 0
     ): Result<SubmissionResult> = runCatching {
 
         // 1. Get latest commit SHA from master
@@ -73,23 +77,67 @@ class GitHubRepository(
         val existingPhotoCount = getExistingPhotoCount(dayEntry.slug)
         val uploadedPhotos = mutableListOf<PhotoWithCaption>()
 
+        // Add already-uploaded photos if resuming
+        for (i in 0 until startFromIndex) {
+            val photoNum = existingPhotoCount + i + 1
+            val filename = "photo-$photoNum.jpg"
+            uploadedPhotos.add(PhotoWithCaption(filename, newPhotos[i].caption))
+        }
+
         newPhotos.forEachIndexed { index, selectedPhoto ->
+            // Skip already uploaded photos when resuming
+            if (index < startFromIndex) return@forEachIndexed
+
             val photoBytes = readOriginalImage(context, selectedPhoto.uri)
             val photoNum = existingPhotoCount + index + 1
             val filename = "photo-$photoNum.jpg"
             val photoPath = "website/content/days/${dayEntry.slug}/photos/$filename"
 
-            api.createOrUpdateFile(
-                owner, repo, photoPath,
-                UpdateFileRequest(
-                    message = "Add photo $photoNum",
-                    content = Base64.encodeToString(photoBytes, Base64.NO_WRAP),
-                    branch = branchName
+            val retryConfig = RetryConfig(maxAttempts = 4, initialDelayMs = 2000)
+            val result = withRetry(
+                config = retryConfig,
+                onRetry = { attempt, delayMs, error ->
+                    onProgress(UploadProgress(
+                        currentPhoto = index + 1,
+                        totalPhotos = newPhotos.size,
+                        retryAttempt = attempt,
+                        retryDelayMs = delayMs,
+                        lastError = error.message
+                    ))
+                }
+            ) {
+                api.createOrUpdateFile(
+                    owner, repo, photoPath,
+                    UpdateFileRequest(
+                        message = "Add photo $photoNum",
+                        content = Base64.encodeToString(photoBytes, Base64.NO_WRAP),
+                        branch = branchName
+                    )
                 )
-            )
+            }
 
-            uploadedPhotos.add(PhotoWithCaption(filename, selectedPhoto.caption))
-            onProgress(index + 1, newPhotos.size)
+            when (result) {
+                is RetryResult.Success -> {
+                    uploadedPhotos.add(PhotoWithCaption(filename, selectedPhoto.caption))
+                    onProgress(UploadProgress(
+                        currentPhoto = index + 1,
+                        totalPhotos = newPhotos.size,
+                        retryAttempt = null,
+                        retryDelayMs = null,
+                        lastError = null
+                    ))
+                }
+                is RetryResult.Failure -> {
+                    throw PhotoUploadException(
+                        message = result.exception.message ?: "Upload failed",
+                        failedPhotoIndex = index,
+                        uploadedCount = uploadedPhotos.size,
+                        totalCount = newPhotos.size,
+                        branchName = branchName,
+                        cause = result.exception
+                    )
+                }
+            }
         }
 
         // 4. Update markdown file with photo captions
@@ -132,7 +180,8 @@ class GitHubRepository(
         dayEntry: DayEntry,
         newPhotos: List<SelectedPhoto>,
         context: Context,
-        onProgress: (current: Int, total: Int) -> Unit = { _, _ -> }
+        onProgress: (progress: UploadProgress) -> Unit = { _ -> },
+        startFromIndex: Int = 0
     ): Result<SubmissionResult> = runCatching {
 
         // 1. Get the PR number for this branch
@@ -144,23 +193,67 @@ class GitHubRepository(
         val existingPhotoCount = getExistingPhotoCount(dayEntry.slug, branchName)
         val uploadedPhotos = mutableListOf<PhotoWithCaption>()
 
+        // Add already-uploaded photos if resuming
+        for (i in 0 until startFromIndex) {
+            val photoNum = existingPhotoCount + i + 1
+            val filename = "photo-$photoNum.jpg"
+            uploadedPhotos.add(PhotoWithCaption(filename, newPhotos[i].caption))
+        }
+
         newPhotos.forEachIndexed { index, selectedPhoto ->
+            // Skip already uploaded photos when resuming
+            if (index < startFromIndex) return@forEachIndexed
+
             val photoBytes = readOriginalImage(context, selectedPhoto.uri)
             val photoNum = existingPhotoCount + index + 1
             val filename = "photo-$photoNum.jpg"
             val photoPath = "website/content/days/${dayEntry.slug}/photos/$filename"
 
-            api.createOrUpdateFile(
-                owner, repo, photoPath,
-                UpdateFileRequest(
-                    message = "Add photo $photoNum",
-                    content = Base64.encodeToString(photoBytes, Base64.NO_WRAP),
-                    branch = branchName
+            val retryConfig = RetryConfig(maxAttempts = 4, initialDelayMs = 2000)
+            val result = withRetry(
+                config = retryConfig,
+                onRetry = { attempt, delayMs, error ->
+                    onProgress(UploadProgress(
+                        currentPhoto = index + 1,
+                        totalPhotos = newPhotos.size,
+                        retryAttempt = attempt,
+                        retryDelayMs = delayMs,
+                        lastError = error.message
+                    ))
+                }
+            ) {
+                api.createOrUpdateFile(
+                    owner, repo, photoPath,
+                    UpdateFileRequest(
+                        message = "Add photo $photoNum",
+                        content = Base64.encodeToString(photoBytes, Base64.NO_WRAP),
+                        branch = branchName
+                    )
                 )
-            )
+            }
 
-            uploadedPhotos.add(PhotoWithCaption(filename, selectedPhoto.caption))
-            onProgress(index + 1, newPhotos.size)
+            when (result) {
+                is RetryResult.Success -> {
+                    uploadedPhotos.add(PhotoWithCaption(filename, selectedPhoto.caption))
+                    onProgress(UploadProgress(
+                        currentPhoto = index + 1,
+                        totalPhotos = newPhotos.size,
+                        retryAttempt = null,
+                        retryDelayMs = null,
+                        lastError = null
+                    ))
+                }
+                is RetryResult.Failure -> {
+                    throw PhotoUploadException(
+                        message = result.exception.message ?: "Upload failed",
+                        failedPhotoIndex = index,
+                        uploadedCount = uploadedPhotos.size,
+                        totalCount = newPhotos.size,
+                        branchName = branchName,
+                        cause = result.exception
+                    )
+                }
+            }
         }
 
         // 3. Update markdown file with photo captions
@@ -424,3 +517,29 @@ data class UpdateInfo(
     val downloadUrl: String,
     val releaseNotesUrl: String
 )
+
+/**
+ * Progress information for photo uploads, including retry status
+ */
+data class UploadProgress(
+    val currentPhoto: Int,
+    val totalPhotos: Int,
+    val retryAttempt: Int? = null,
+    val retryDelayMs: Long? = null,
+    val lastError: String? = null
+) {
+    val isRetrying: Boolean get() = retryAttempt != null
+}
+
+/**
+ * Exception thrown when photo upload fails after all retries
+ * Contains information needed to resume the upload
+ */
+class PhotoUploadException(
+    message: String,
+    val failedPhotoIndex: Int,
+    val uploadedCount: Int,
+    val totalCount: Int,
+    val branchName: String,
+    cause: Throwable? = null
+) : Exception(message, cause)

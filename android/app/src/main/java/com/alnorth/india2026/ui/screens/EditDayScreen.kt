@@ -21,6 +21,8 @@ import com.alnorth.india2026.model.DayEntry
 import com.alnorth.india2026.model.PhotoWithCaption
 import com.alnorth.india2026.model.SelectedPhoto
 import com.alnorth.india2026.model.SubmissionResult
+import com.alnorth.india2026.repository.PhotoUploadException
+import com.alnorth.india2026.repository.UploadProgress
 import com.alnorth.india2026.ui.composables.ExistingPhotosSection
 import com.alnorth.india2026.ui.composables.MarkdownEditor
 import com.alnorth.india2026.ui.composables.PhotoPickerSection
@@ -200,6 +202,15 @@ fun EditDayScreen(
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.outline
                             )
+                            // Show retry status if retrying
+                            if (state.retryAttempt != null) {
+                                Spacer(Modifier.height(8.dp))
+                                Text(
+                                    text = "Retry attempt ${state.retryAttempt}/4 (waiting ${state.retryDelayMs?.div(1000) ?: 0}s)...",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.secondary
+                                )
+                            }
                         } else {
                             // Show spinner for other operations (creating branch, etc.)
                             CircularProgressIndicator()
@@ -254,6 +265,78 @@ fun EditDayScreen(
                     }
                 }
             }
+
+            is EditDayUiState.UploadError -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Error,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(48.dp)
+                        )
+                        Text(
+                            "Upload Failed",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        Text(
+                            state.message,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                        // Show progress info
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            )
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    "Upload Progress",
+                                    style = MaterialTheme.typography.titleSmall
+                                )
+                                LinearProgressIndicator(
+                                    progress = { state.uploadedCount.toFloat() / state.totalCount.toFloat() },
+                                    modifier = Modifier.fillMaxWidth(),
+                                )
+                                Text(
+                                    "${state.uploadedCount} of ${state.totalCount} photos uploaded successfully",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.outline
+                                )
+                            }
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedButton(onClick = onNavigateBack) {
+                                Text("Cancel")
+                            }
+                            Button(onClick = { viewModel.retryUpload(context) }) {
+                                Text("Retry Upload")
+                            }
+                        }
+                        Text(
+                            "Retry will resume from photo ${state.failedPhotoIndex + 1}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -304,6 +387,16 @@ class EditDayViewModel : ViewModel() {
 
     private var originalEntry: DayEntry? = null
     private var existingBranchName: String? = null
+
+    // State for retry functionality
+    private var pendingSubmission: PendingSubmission? = null
+
+    private data class PendingSubmission(
+        val updatedEntry: DayEntry,
+        val newPhotos: List<SelectedPhoto>,
+        val branchName: String?,
+        val startFromIndex: Int = 0
+    )
 
     fun loadDay(slug: String, branchName: String? = null) {
         existingBranchName = branchName
@@ -394,74 +487,100 @@ class EditDayViewModel : ViewModel() {
         val current = _uiState.value
         if (current !is EditDayUiState.Editing) return
 
+        val updatedEntry = current.dayEntry.copy(
+            status = current.status,
+            stravaId = current.stravaId.ifEmpty { null },
+            content = current.content,
+            photos = current.editedExistingPhotos
+        )
+
+        // Store for potential retry
+        pendingSubmission = PendingSubmission(
+            updatedEntry = updatedEntry,
+            newPhotos = current.newPhotos,
+            branchName = existingBranchName,
+            startFromIndex = 0
+        )
+
+        executeSubmission(context, updatedEntry, current.newPhotos, existingBranchName, 0)
+    }
+
+    fun retryUpload(context: Context) {
+        val pending = pendingSubmission ?: return
+        executeSubmission(
+            context,
+            pending.updatedEntry,
+            pending.newPhotos,
+            pending.branchName,
+            pending.startFromIndex
+        )
+    }
+
+    private fun executeSubmission(
+        context: Context,
+        updatedEntry: DayEntry,
+        newPhotos: List<SelectedPhoto>,
+        branchName: String?,
+        startFromIndex: Int
+    ) {
         viewModelScope.launch {
             try {
-                val updatedEntry = current.dayEntry.copy(
-                    status = current.status,
-                    stravaId = current.stravaId.ifEmpty { null },
-                    content = current.content,
-                    photos = current.editedExistingPhotos
-                )
-
                 val repository = ApiClient.repository
 
-                if (existingBranchName != null) {
+                val progressCallback: (UploadProgress) -> Unit = { progress ->
+                    _uiState.value = EditDayUiState.Submitting(
+                        message = if (progress.isRetrying) "Retrying upload..." else "Uploading photos...",
+                        currentPhoto = progress.currentPhoto,
+                        totalPhotos = progress.totalPhotos,
+                        retryAttempt = progress.retryAttempt,
+                        retryDelayMs = progress.retryDelayMs
+                    )
+                }
+
+                if (branchName != null) {
                     // Commit to existing PR branch
                     _uiState.value = EditDayUiState.Submitting(
                         "Uploading photos...",
-                        currentPhoto = 0,
-                        totalPhotos = current.newPhotos.size
+                        currentPhoto = startFromIndex,
+                        totalPhotos = newPhotos.size
                     )
 
                     repository.commitToExistingBranch(
-                        existingBranchName!!,
+                        branchName,
                         updatedEntry,
-                        current.newPhotos,
+                        newPhotos,
                         context,
-                        onProgress = { currentPhoto, totalPhotos ->
-                            _uiState.value = EditDayUiState.Submitting(
-                                "Uploading photos...",
-                                currentPhoto = currentPhoto,
-                                totalPhotos = totalPhotos
-                            )
-                        }
+                        onProgress = progressCallback,
+                        startFromIndex = startFromIndex
                     )
                         .onSuccess { result ->
+                            pendingSubmission = null
                             _uiState.value = EditDayUiState.Success(result)
                         }
                         .onFailure { e ->
-                            _uiState.value = EditDayUiState.Error(
-                                e.message ?: "Failed to commit changes"
-                            )
+                            handleSubmissionFailure(e, branchName)
                         }
                 } else {
                     // Create new PR
-                    _uiState.value = EditDayUiState.Submitting("Creating branch...")
                     _uiState.value = EditDayUiState.Submitting(
-                        "Uploading photos...",
-                        currentPhoto = 0,
-                        totalPhotos = current.newPhotos.size
+                        "Creating branch...",
+                        currentPhoto = startFromIndex,
+                        totalPhotos = newPhotos.size
                     )
 
                     repository.updateDayEntry(
                         updatedEntry,
-                        current.newPhotos,
+                        newPhotos,
                         context,
-                        onProgress = { currentPhoto, totalPhotos ->
-                            _uiState.value = EditDayUiState.Submitting(
-                                "Uploading photos...",
-                                currentPhoto = currentPhoto,
-                                totalPhotos = totalPhotos
-                            )
-                        }
+                        onProgress = progressCallback,
+                        startFromIndex = startFromIndex
                     )
                         .onSuccess { result ->
+                            pendingSubmission = null
                             _uiState.value = EditDayUiState.Success(result)
                         }
                         .onFailure { e ->
-                            _uiState.value = EditDayUiState.Error(
-                                e.message ?: "Failed to create pull request"
-                            )
+                            handleSubmissionFailure(e, null)
                         }
                 }
             } catch (e: Exception) {
@@ -469,6 +588,28 @@ class EditDayViewModel : ViewModel() {
                     "Error: ${e.message ?: "Unknown error occurred"}"
                 )
             }
+        }
+    }
+
+    private fun handleSubmissionFailure(e: Throwable, branchName: String?) {
+        if (e is PhotoUploadException) {
+            // Update pending submission with the failed index for retry
+            pendingSubmission = pendingSubmission?.copy(
+                startFromIndex = e.failedPhotoIndex,
+                branchName = e.branchName
+            )
+
+            _uiState.value = EditDayUiState.UploadError(
+                message = e.message ?: "Photo upload failed",
+                failedPhotoIndex = e.failedPhotoIndex,
+                uploadedCount = e.uploadedCount,
+                totalCount = e.totalCount,
+                branchName = e.branchName
+            )
+        } else {
+            _uiState.value = EditDayUiState.Error(
+                e.message ?: "Failed to submit changes"
+            )
         }
     }
 }
@@ -487,8 +628,17 @@ sealed class EditDayUiState {
     data class Submitting(
         val message: String,
         val currentPhoto: Int = 0,
-        val totalPhotos: Int = 0
+        val totalPhotos: Int = 0,
+        val retryAttempt: Int? = null,
+        val retryDelayMs: Long? = null
     ) : EditDayUiState()
     data class Success(val result: SubmissionResult) : EditDayUiState()
     data class Error(val message: String) : EditDayUiState()
+    data class UploadError(
+        val message: String,
+        val failedPhotoIndex: Int,
+        val uploadedCount: Int,
+        val totalCount: Int,
+        val branchName: String?
+    ) : EditDayUiState()
 }
