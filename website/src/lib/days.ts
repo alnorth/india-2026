@@ -6,6 +6,32 @@ import { parseGPXServer, calculateGPXStats, type GPXStats } from './gpxServerUti
 
 const daysDirectory = path.join(process.cwd(), 'content/days')
 
+/**
+ * Natural sort comparison for filenames with numbers.
+ * Ensures photo-2.jpg comes before photo-10.jpg.
+ */
+export function naturalSort(a: string, b: string): number {
+  const regex = /(\d+)|(\D+)/g
+  const aParts = a.match(regex) || []
+  const bParts = b.match(regex) || []
+
+  for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
+    const aPart = aParts[i] || ''
+    const bPart = bParts[i] || ''
+
+    const aNum = parseInt(aPart, 10)
+    const bNum = parseInt(bPart, 10)
+
+    if (!isNaN(aNum) && !isNaN(bNum)) {
+      if (aNum !== bNum) return aNum - bNum
+    } else {
+      const cmp = aPart.localeCompare(bPart)
+      if (cmp !== 0) return cmp
+    }
+  }
+  return 0
+}
+
 export interface PhotoMetadata {
   file: string
   caption?: string
@@ -98,6 +124,7 @@ export function getDayBySlug(slug: string): Day | null {
     photos = fs
       .readdirSync(photosPath)
       .filter((file) => /\.(jpg|jpeg|png|gif|webp)$/i.test(file))
+      .sort(naturalSort)
       .map((file) => `/content/days/${slug}/photos/${file}`)
   }
 
