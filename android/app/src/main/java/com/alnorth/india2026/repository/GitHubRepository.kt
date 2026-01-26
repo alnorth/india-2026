@@ -16,6 +16,31 @@ class GitHubRepository(
     private val repo = "india-2026"
     private val baseBranch = "master"
 
+    // Natural sort comparator for photo filenames (photo-2.jpg before photo-10.jpg)
+    private val naturalSortComparator = Comparator<GitHubContent> { a, b ->
+        naturalCompare(a.name, b.name)
+    }
+
+    private fun naturalCompare(a: String, b: String): Int {
+        val pattern = Regex("""(\d+)|(\D+)""")
+        val partsA = pattern.findAll(a).map { it.value }.toList()
+        val partsB = pattern.findAll(b).map { it.value }.toList()
+
+        for (i in 0 until minOf(partsA.size, partsB.size)) {
+            val partA = partsA[i]
+            val partB = partsB[i]
+            val numA = partA.toIntOrNull()
+            val numB = partB.toIntOrNull()
+
+            val cmp = when {
+                numA != null && numB != null -> numA.compareTo(numB)
+                else -> partA.compareTo(partB)
+            }
+            if (cmp != 0) return cmp
+        }
+        return partsA.size.compareTo(partsB.size)
+    }
+
     // Fetch all existing days from the repository
     suspend fun getAllDays(): Result<List<DaySummary>> = runCatching {
         val contents = api.getDirectoryContents(owner, repo, "website/content/days")
@@ -306,10 +331,10 @@ class GitHubRepository(
                 api.getDirectoryContents(owner, repo, "website/content/days/$slug/photos")
             }
 
-            // Filter for image files and sort by name
+            // Filter for image files and sort naturally (photo-2 before photo-10)
             photoFiles
                 .filter { it.type == "file" && (it.name.endsWith(".jpg") || it.name.endsWith(".jpeg") || it.name.endsWith(".png")) }
-                .sortedBy { it.name }
+                .sortedWith(naturalSortComparator)
                 .map { PhotoWithCaption(filename = it.name, caption = "") }
         } catch (e: Exception) {
             emptyList()  // No photos directory yet
