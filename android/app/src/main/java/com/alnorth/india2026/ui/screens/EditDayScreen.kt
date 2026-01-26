@@ -1,6 +1,7 @@
 package com.alnorth.india2026.ui.screens
 
 import android.content.Context
+import android.net.Uri
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -36,6 +37,7 @@ import kotlinx.coroutines.launch
 fun EditDayScreen(
     slug: String,
     branchName: String? = null,
+    initialSharedPhotos: List<Uri> = emptyList(),
     viewModel: EditDayViewModel = viewModel(),
     onNavigateBack: () -> Unit,
     onNavigateToResult: (SubmissionResult) -> Unit
@@ -44,7 +46,7 @@ fun EditDayScreen(
     val context = LocalContext.current
 
     LaunchedEffect(slug, branchName) {
-        viewModel.loadDay(slug, branchName)
+        viewModel.loadDay(slug, branchName, initialSharedPhotos)
     }
 
     Scaffold(
@@ -400,7 +402,7 @@ class EditDayViewModel : ViewModel() {
         val startFromIndex: Int = 0
     )
 
-    fun loadDay(slug: String, branchName: String? = null) {
+    fun loadDay(slug: String, branchName: String? = null, initialSharedPhotos: List<Uri> = emptyList()) {
         existingBranchName = branchName
         viewModelScope.launch {
             _uiState.value = EditDayUiState.Loading
@@ -417,6 +419,11 @@ class EditDayViewModel : ViewModel() {
                 // Access repository only after token check
                 val repository = ApiClient.repository
 
+                // Convert shared URIs to SelectedPhoto objects
+                val initialPhotos = initialSharedPhotos.map { uri ->
+                    SelectedPhoto(uri = uri, caption = "")
+                }
+
                 repository.getDayBySlug(slug, branchName)
                     .onSuccess { entry ->
                         originalEntry = entry
@@ -425,9 +432,9 @@ class EditDayViewModel : ViewModel() {
                             status = entry.status,
                             stravaId = entry.stravaId ?: "",
                             content = entry.content,
-                            newPhotos = emptyList(),
+                            newPhotos = initialPhotos,
                             editedExistingPhotos = entry.photos,
-                            hasChanges = false
+                            hasChanges = initialPhotos.isNotEmpty()
                         )
                     }
                     .onFailure { e ->

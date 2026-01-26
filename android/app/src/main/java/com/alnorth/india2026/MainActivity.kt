@@ -1,7 +1,10 @@
 package com.alnorth.india2026
 
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.os.Parcelable
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -29,6 +32,7 @@ import com.alnorth.india2026.ui.screens.DayListScreen
 import com.alnorth.india2026.ui.screens.EditDayScreen
 import com.alnorth.india2026.ui.screens.PullRequestListScreen
 import com.alnorth.india2026.ui.screens.ResultScreen
+import com.alnorth.india2026.ui.screens.ShareTargetScreen
 import com.alnorth.india2026.ui.theme.India2026Theme
 import kotlinx.coroutines.launch
 
@@ -43,6 +47,9 @@ class MainActivity : ComponentActivity() {
         // Install custom crash handler
         Thread.setDefaultUncaughtExceptionHandler(CrashHandler(applicationContext))
 
+        // Extract shared image URIs from intent
+        val sharedImageUris = extractSharedImages(intent)
+
         enableEdgeToEdge()
         setContent {
             India2026Theme {
@@ -50,15 +57,31 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    MainContent()
+                    MainContent(sharedImageUris = sharedImageUris)
                 }
             }
+        }
+    }
+
+    private fun extractSharedImages(intent: Intent): List<Uri> {
+        return when (intent.action) {
+            Intent.ACTION_SEND -> {
+                intent.getParcelableExtra<Parcelable>(Intent.EXTRA_STREAM)?.let { uri ->
+                    listOf(uri as Uri)
+                } ?: emptyList()
+            }
+            Intent.ACTION_SEND_MULTIPLE -> {
+                intent.getParcelableArrayListExtra<Parcelable>(Intent.EXTRA_STREAM)?.mapNotNull {
+                    it as? Uri
+                } ?: emptyList()
+            }
+            else -> emptyList()
         }
     }
 }
 
 @Composable
-fun MainContent() {
+fun MainContent(sharedImageUris: List<Uri> = emptyList()) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val prefs = remember { context.getSharedPreferences("crash_data", Context.MODE_PRIVATE) }
     var crashMessage by remember { mutableStateOf(prefs.getString("crash_message", null)) }
@@ -72,17 +95,22 @@ fun MainContent() {
             }
         )
     } else {
-        // Step 3: Test navigation without DayListScreen
-        India2026App()
+        India2026App(sharedImageUris = sharedImageUris)
     }
 }
 
 @Composable
-fun India2026App() {
+fun India2026App(sharedImageUris: List<Uri> = emptyList()) {
     val navController = rememberNavController()
     var submissionResult: SubmissionResult? = null
     var updateInfo by remember { mutableStateOf<UpdateInfo?>(null) }
     val scope = rememberCoroutineScope()
+
+    // Track shared URIs that need to be passed to EditDayScreen
+    var pendingSharedUris by remember { mutableStateOf<List<Uri>>(emptyList()) }
+
+    // Determine start destination based on whether we have shared images
+    val startDestination = if (sharedImageUris.isNotEmpty()) "share_target" else "day_list"
 
     // Check for updates on app start
     LaunchedEffect(Unit) {
@@ -106,11 +134,28 @@ fun India2026App() {
     ) { paddingValues ->
         NavHost(
             navController = navController,
-            startDestination = "day_list",
+            startDestination = startDestination,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
+        // Share Target Screen - shows day picker when app receives shared images
+        composable("share_target") {
+            ShareTargetScreen(
+                sharedImageUris = sharedImageUris,
+                onDaySelected = { slug, uris ->
+                    pendingSharedUris = uris
+                    navController.navigate("edit_day/$slug") {
+                        popUpTo("share_target") { inclusive = true }
+                    }
+                },
+                onCancel = {
+                    // Close the activity when user cancels sharing
+                    (navController.context as? ComponentActivity)?.finish()
+                }
+            )
+        }
+
         // Day List Screen
         composable("day_list") {
             DayListScreen(
@@ -137,9 +182,12 @@ fun India2026App() {
         ) { backStackEntry ->
             val slug = backStackEntry.arguments?.getString("slug") ?: return@composable
             val branchName = backStackEntry.arguments?.getString("branchName")
+            // Consume pending shared URIs
+            val initialSharedUris = remember { pendingSharedUris.also { pendingSharedUris = emptyList() } }
             EditDayScreen(
                 slug = slug,
                 branchName = branchName,
+                initialSharedPhotos = initialSharedUris,
                 onNavigateBack = {
                     navController.popBackStack()
                 },
