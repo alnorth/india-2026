@@ -33,10 +33,18 @@ for (const day of days) {
   if (fs.existsSync(photosDir)) {
     fs.mkdirSync(optimizedDir, { recursive: true });
 
-    const photoFiles = fs
-      .readdirSync(photosDir)
-      .filter((file) => /\.(jpg|jpeg|png|gif|webp)$/i.test(file))
-      .sort(naturalSort);
+    // Use frontmatter photo order if available, otherwise fall back to natural sort
+    let photoFiles: string[];
+    if (day.photos && day.photos.length > 0) {
+      // Extract filenames from the already-ordered photos array
+      photoFiles = day.photos.map((photoPath) => photoPath.split('/').pop()!);
+    } else {
+      // No frontmatter photos, fall back to natural sort
+      photoFiles = fs
+        .readdirSync(photosDir)
+        .filter((file) => /\.(jpg|jpeg|png|gif|webp)$/i.test(file))
+        .sort(naturalSort);
+    }
 
     for (const filename of photoFiles) {
       const photoPath = path.join(photosDir, filename);
