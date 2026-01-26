@@ -9,6 +9,8 @@ photos:
     caption: "The hotel breakfast."
   - file: "photo-2.jpg"
     caption: "The first little temple we looked at. The carvings, and the alcove, were carved directly into the existing rock."
+  - file: "photo-30.jpg"
+    caption: ""
   - file: "photo-3.jpg"
     caption: ""
   - file: "photo-4.jpg"
@@ -45,6 +47,10 @@ photos:
     caption: ""
   - file: "photo-20.jpg"
     caption: "Mahabalipuram high street."
+  - file: "photo-29.jpg"
+    caption: ""
+  - file: "photo-31.jpg"
+    caption: "Dillip in his shop."
   - file: "photo-28.jpg"
     caption: "Masala dosa."
   - file: "photo-21.jpg"
@@ -61,12 +67,6 @@ photos:
     caption: "The cows wander everywhere here and people just steer around them. They're pretty chilled out, so you just need to make sure you don't run into them."
   - file: "photo-27.jpg"
     caption: "Our dinner: grilled fish with egg fried rice."
-  - file: "photo-29.jpg"
-    caption: ""
-  - file: "photo-30.jpg"
-    caption: ""
-  - file: "photo-31.jpg"
-    caption: "Dillip in his shop."
 ---
 
 We slept reasonably well, mainly thanks to the tiredness from the journey. The hotel breakfast was good, with a mixture of local and western options available.
