@@ -426,14 +426,17 @@ class GitHubRepository(
 
     private fun parseDayEntry(slug: String, markdown: String, sha: String, directoryPhotos: List<PhotoWithCaption>): DayEntry {
         val frontmatter = extractFrontmatter(markdown)
-        val photoCaptions = parsePhotoCaptions(markdown)
+        val frontmatterPhotos = parsePhotosFromFrontmatter(markdown)
         val content = markdown.substringAfter("---").substringAfter("---").trim()
 
-        // Merge directory photos with captions from markdown
-        val photos = directoryPhotos.map { photo ->
-            val caption = photoCaptions[photo.filename] ?: ""
-            photo.copy(caption = caption)
-        }
+        // Use frontmatter order as primary, then add any directory photos not in frontmatter
+        val frontmatterFilenames = frontmatterPhotos.map { it.filename }.toSet()
+        val directoryFilenames = directoryPhotos.map { it.filename }.toSet()
+
+        // Keep only frontmatter photos that exist in directory (preserving frontmatter order)
+        val photos = frontmatterPhotos.filter { it.filename in directoryFilenames } +
+            // Add any new photos from directory that aren't in frontmatter (sorted)
+            directoryPhotos.filter { it.filename !in frontmatterFilenames }
 
         return DayEntry(
             slug = slug,
@@ -466,20 +469,20 @@ class GitHubRepository(
             }
     }
 
-    // Parse photo captions from markdown frontmatter
-    private fun parsePhotoCaptions(markdown: String): Map<String, String> {
-        if (!markdown.startsWith("---")) return emptyMap()
+    // Parse photos from markdown frontmatter, preserving order
+    private fun parsePhotosFromFrontmatter(markdown: String): List<PhotoWithCaption> {
+        if (!markdown.startsWith("---")) return emptyList()
 
         val frontmatterSection = markdown
             .substringAfter("---")
             .substringBefore("---")
 
-        // Simple YAML list parser for photo captions
-        val captions = mutableMapOf<String, String>()
+        // Simple YAML list parser for photos
+        val photos = mutableListOf<PhotoWithCaption>()
         var currentFilename: String? = null
 
         val inPhotosSection = frontmatterSection.contains("photos:")
-        if (!inPhotosSection) return emptyMap()
+        if (!inPhotosSection) return emptyList()
 
         val lines = frontmatterSection.lines()
         var inPhotos = false
@@ -499,7 +502,7 @@ class GitHubRepository(
                         .substringAfter("caption:")
                         .trim()
                         .removeSurrounding("\"")
-                    captions[currentFilename!!] = caption
+                    photos.add(PhotoWithCaption(currentFilename!!, caption))
                     currentFilename = null
                 }
                 inPhotos && !trimmed.startsWith("-") && !trimmed.startsWith("file:") &&
@@ -509,7 +512,7 @@ class GitHubRepository(
                 }
             }
         }
-        return captions
+        return photos
     }
 
     private fun buildPrBody(entry: DayEntry, newPhotoCount: Int): String {
