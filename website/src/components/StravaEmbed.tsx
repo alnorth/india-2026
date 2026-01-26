@@ -1,25 +1,33 @@
+import { useEffect } from 'react'
+
 interface StravaEmbedProps {
-  activityId: string
+  // stravaId should be the numeric activity ID from the Strava URL
+  // e.g. for strava.com/activities/13426073740 use "13426073740"
+  stravaId: string
 }
 
-export default function StravaEmbed({ activityId }: StravaEmbedProps) {
+export default function StravaEmbed({ stravaId }: StravaEmbedProps) {
+  useEffect(() => {
+    // Load Strava embed script
+    const script = document.createElement('script')
+    script.src = 'https://strava-embeds.com/embed.js'
+    script.async = true
+    document.body.appendChild(script)
+
+    return () => {
+      // Cleanup on unmount
+      document.body.removeChild(script)
+    }
+  }, [])
+
   return (
     <div className="w-full">
-      <iframe
-        height="405"
-        width="100%"
-        frameBorder="0"
-        allowTransparency={true}
-        scrolling="no"
-        src={`https://www.strava.com/activities/${activityId}/embed/[EMBED_TOKEN]`}
-        className="rounded-lg shadow-md"
+      <div
+        className="strava-embed-placeholder"
+        data-embed-type="activity"
+        data-embed-id={stravaId}
+        data-style="standard"
       />
-      <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-        <p>
-          Note: You'll need to replace [EMBED_TOKEN] in the component with your actual Strava embed token.
-          Get this from the Strava activity page by clicking Share → Embed Activity.
-        </p>
-      </div>
     </div>
   )
 }
