@@ -37,6 +37,8 @@ photos:
     caption: "Curry for dinner, again 😀"
   - file: "photo-13.jpg"
     caption: ""
+  - file: "photo-17.jpg"
+    caption: "We got off and walked for this one."
 ---
 
 Today was our first day of actual riding, and it was a lot smoother than I'd expected!
