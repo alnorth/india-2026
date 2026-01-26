@@ -30,7 +30,6 @@ import com.alnorth.india2026.ui.composables.BranchFooter
 import com.alnorth.india2026.ui.screens.CrashScreen
 import com.alnorth.india2026.ui.screens.DayListScreen
 import com.alnorth.india2026.ui.screens.EditDayScreen
-import com.alnorth.india2026.ui.screens.PullRequestListScreen
 import com.alnorth.india2026.ui.screens.ResultScreen
 import com.alnorth.india2026.ui.screens.ShareTargetScreen
 import com.alnorth.india2026.ui.theme.India2026Theme
@@ -161,32 +160,22 @@ fun India2026App(sharedImageUris: List<Uri> = emptyList()) {
             DayListScreen(
                 onDaySelected = { slug ->
                     navController.navigate("edit_day/$slug")
-                },
-                onViewPullRequests = {
-                    navController.navigate("pull_requests")
                 }
             )
         }
 
         // Edit Day Screen
         composable(
-            route = "edit_day/{slug}?branchName={branchName}",
+            route = "edit_day/{slug}",
             arguments = listOf(
-                navArgument("slug") { type = NavType.StringType },
-                navArgument("branchName") {
-                    type = NavType.StringType
-                    nullable = true
-                    defaultValue = null
-                }
+                navArgument("slug") { type = NavType.StringType }
             )
         ) { backStackEntry ->
             val slug = backStackEntry.arguments?.getString("slug") ?: return@composable
-            val branchName = backStackEntry.arguments?.getString("branchName")
             // Consume pending shared URIs
             val initialSharedUris = remember { pendingSharedUris.also { pendingSharedUris = emptyList() } }
             EditDayScreen(
                 slug = slug,
-                branchName = branchName,
                 initialSharedPhotos = initialSharedUris,
                 onNavigateBack = {
                     navController.popBackStack()
@@ -205,34 +194,13 @@ fun India2026App(sharedImageUris: List<Uri> = emptyList()) {
             submissionResult?.let { result ->
                 ResultScreen(
                     result = result,
-                    onCreateAnother = {
+                    onEditAnother = {
                         navController.navigate("day_list") {
                             popUpTo("day_list") { inclusive = true }
                         }
-                    },
-                    onEditDay = { slug, branchName ->
-                        navController.navigate("edit_day/$slug?branchName=$branchName")
                     }
                 )
             }
-        }
-
-        // Pull Request List Screen
-        composable("pull_requests") {
-            PullRequestListScreen(
-                onNavigateBack = {
-                    navController.popBackStack()
-                },
-                onPullRequestSelected = { result ->
-                    submissionResult = result
-                    navController.navigate("result") {
-                        popUpTo("pull_requests") { inclusive = false }
-                    }
-                },
-                onEditDay = { slug, branchName ->
-                    navController.navigate("edit_day/$slug?branchName=$branchName")
-                }
-            )
         }
         }
     }

@@ -61,21 +61,17 @@ class GitHubRepository(
     }
 
     // Fetch a specific day's full content
-    suspend fun getDayBySlug(slug: String, branchName: String? = null): Result<DayEntry> = runCatching {
-        val indexContent = if (branchName != null) {
-            api.getFileContent(owner, repo, "website/content/days/$slug/index.md", branchName)
-        } else {
-            api.getFileContent(owner, repo, "website/content/days/$slug/index.md")
-        }
+    suspend fun getDayBySlug(slug: String): Result<DayEntry> = runCatching {
+        val indexContent = api.getFileContent(owner, repo, "website/content/days/$slug/index.md")
         val markdown = String(Base64.decode(indexContent.content, Base64.DEFAULT))
 
-        // Get actual photos from the branch's directory listing
-        val photos = getPhotosFromDirectory(slug, branchName)
+        // Get actual photos from the directory listing
+        val photos = getPhotosFromDirectory(slug)
 
         parseDayEntry(slug, markdown, indexContent.sha, photos)
     }
 
-    // Update an existing day entry
+    // Update an existing day entry - commits directly to master
     suspend fun updateDayEntry(
         dayEntry: DayEntry,
         newPhotos: List<SelectedPhoto>,
@@ -84,21 +80,7 @@ class GitHubRepository(
         startFromIndex: Int = 0
     ): Result<SubmissionResult> = runCatching {
 
-        // 1. Get latest commit SHA from master
-        val masterBranch = api.getBranch(owner, repo, baseBranch)
-        val baseSha = masterBranch.commit.sha
-
-        // 2. Create feature branch
-        val branchName = "app/${dayEntry.slug}-${System.currentTimeMillis()}"
-        api.createBranch(
-            owner, repo,
-            CreateBranchRequest(
-                ref = "refs/heads/$branchName",
-                sha = baseSha
-            )
-        )
-
-        // 3. Upload new photos first (to get filenames)
+        // 1. Upload new photos first (to get filenames)
         val existingPhotoCount = getExistingPhotoCount(dayEntry.slug)
         val uploadedPhotos = mutableListOf<PhotoWithCaption>()
 
@@ -136,7 +118,7 @@ class GitHubRepository(
                     UpdateFileRequest(
                         message = "Add photo $photoNum",
                         content = Base64.encodeToString(photoBytes, Base64.NO_WRAP),
-                        branch = branchName
+                        branch = baseBranch
                     )
                 )
             }
@@ -158,137 +140,19 @@ class GitHubRepository(
                         failedPhotoIndex = index,
                         uploadedCount = uploadedPhotos.size,
                         totalCount = newPhotos.size,
-                        branchName = branchName,
                         cause = result.exception
                     )
                 }
             }
         }
 
-        // 4. Update markdown file with photo captions
-        val markdownContent = dayEntry.toMarkdown(uploadedPhotos)
+        // 2. Get latest file SHA from master for updating
         val markdownPath = "website/content/days/${dayEntry.slug}/index.md"
-        api.createOrUpdateFile(
-            owner, repo, markdownPath,
-            UpdateFileRequest(
-                message = "Update ${dayEntry.title}",
-                content = Base64.encodeToString(
-                    markdownContent.toByteArray(),
-                    Base64.NO_WRAP
-                ),
-                branch = branchName,
-                sha = dayEntry.fileSha  // Required to update existing file
-            )
-        )
-
-        // 5. Create Pull Request
-        val pr = api.createPullRequest(
-            owner, repo,
-            CreatePullRequestRequest(
-                title = "Update ${dayEntry.title}",
-                body = buildPrBody(dayEntry, newPhotos.size),
-                head = branchName,
-                base = baseBranch
-            )
-        )
-
-        SubmissionResult(
-            prNumber = pr.number,
-            prUrl = pr.html_url,
-            branchName = branchName
-        )
-    }
-
-    // Commit changes to an existing PR branch
-    suspend fun commitToExistingBranch(
-        branchName: String,
-        dayEntry: DayEntry,
-        newPhotos: List<SelectedPhoto>,
-        context: Context,
-        onProgress: (progress: UploadProgress) -> Unit = { _ -> },
-        startFromIndex: Int = 0
-    ): Result<SubmissionResult> = runCatching {
-
-        // 1. Get the PR number for this branch
-        val allPRs = api.getPullRequests(owner, repo, state = "open")
-        val pr = allPRs.find { it.head.ref == branchName }
-            ?: throw IllegalArgumentException("No open PR found for branch $branchName")
-
-        // 2. Upload new photos first (to get filenames)
-        val existingPhotoCount = getExistingPhotoCount(dayEntry.slug, branchName)
-        val uploadedPhotos = mutableListOf<PhotoWithCaption>()
-
-        // Add already-uploaded photos if resuming
-        for (i in 0 until startFromIndex) {
-            val photoNum = existingPhotoCount + i + 1
-            val filename = "photo-$photoNum.jpg"
-            uploadedPhotos.add(PhotoWithCaption(filename, newPhotos[i].caption))
-        }
-
-        newPhotos.forEachIndexed { index, selectedPhoto ->
-            // Skip already uploaded photos when resuming
-            if (index < startFromIndex) return@forEachIndexed
-
-            val photoBytes = readOriginalImage(context, selectedPhoto.uri)
-            val photoNum = existingPhotoCount + index + 1
-            val filename = "photo-$photoNum.jpg"
-            val photoPath = "website/content/days/${dayEntry.slug}/photos/$filename"
-
-            val retryConfig = RetryConfig(maxAttempts = 4, initialDelayMs = 2000)
-            val result = withRetry(
-                config = retryConfig,
-                onRetry = { attempt, delayMs, error ->
-                    onProgress(UploadProgress(
-                        currentPhoto = index + 1,
-                        totalPhotos = newPhotos.size,
-                        retryAttempt = attempt,
-                        retryDelayMs = delayMs,
-                        lastError = error.message
-                    ))
-                }
-            ) {
-                api.createOrUpdateFile(
-                    owner, repo, photoPath,
-                    UpdateFileRequest(
-                        message = "Add photo $photoNum",
-                        content = Base64.encodeToString(photoBytes, Base64.NO_WRAP),
-                        branch = branchName
-                    )
-                )
-            }
-
-            when (result) {
-                is RetryResult.Success -> {
-                    uploadedPhotos.add(PhotoWithCaption(filename, selectedPhoto.caption))
-                    onProgress(UploadProgress(
-                        currentPhoto = index + 1,
-                        totalPhotos = newPhotos.size,
-                        retryAttempt = null,
-                        retryDelayMs = null,
-                        lastError = null
-                    ))
-                }
-                is RetryResult.Failure -> {
-                    throw PhotoUploadException(
-                        message = result.exception.message ?: "Upload failed",
-                        failedPhotoIndex = index,
-                        uploadedCount = uploadedPhotos.size,
-                        totalCount = newPhotos.size,
-                        branchName = branchName,
-                        cause = result.exception
-                    )
-                }
-            }
-        }
+        val currentFile = api.getFileContent(owner, repo, markdownPath)
 
         // 3. Update markdown file with photo captions
         val markdownContent = dayEntry.toMarkdown(uploadedPhotos)
-        val markdownPath = "website/content/days/${dayEntry.slug}/index.md"
-
-        // Get the current file SHA from the branch
-        val currentFile = api.getFileContent(owner, repo, markdownPath, branchName)
-
-        api.createOrUpdateFile(
+        val updateResponse = api.createOrUpdateFile(
             owner, repo, markdownPath,
             UpdateFileRequest(
                 message = "Update ${dayEntry.title}",
@@ -296,40 +160,31 @@ class GitHubRepository(
                     markdownContent.toByteArray(),
                     Base64.NO_WRAP
                 ),
-                branch = branchName,
-                sha = currentFile.sha  // Use SHA from the branch, not master
+                branch = baseBranch,
+                sha = currentFile.sha
             )
         )
 
         SubmissionResult(
-            prNumber = pr.number,
-            prUrl = pr.html_url,
-            branchName = branchName
+            commitSha = updateResponse.commit.sha,
+            dayTitle = dayEntry.title
         )
     }
 
-    private suspend fun getExistingPhotoCount(slug: String, branchName: String? = null): Int {
+    private suspend fun getExistingPhotoCount(slug: String): Int {
         return try {
-            val contents = if (branchName != null) {
-                api.getDirectoryContents(owner, repo, "website/content/days/$slug/photos", branchName)
-            } else {
-                api.getDirectoryContents(owner, repo, "website/content/days/$slug/photos")
-            }
+            val contents = api.getDirectoryContents(owner, repo, "website/content/days/$slug/photos")
             contents.count { it.type == "file" && it.name.endsWith(".jpg") }
         } catch (e: Exception) {
             0  // No photos directory yet
         }
     }
 
-    // Get photos from directory listing on a specific branch
-    private suspend fun getPhotosFromDirectory(slug: String, branchName: String?): List<PhotoWithCaption> {
+    // Get photos from directory listing
+    private suspend fun getPhotosFromDirectory(slug: String): List<PhotoWithCaption> {
         return try {
             // Get actual files from the photos directory
-            val photoFiles = if (branchName != null) {
-                api.getDirectoryContents(owner, repo, "website/content/days/$slug/photos", branchName)
-            } else {
-                api.getDirectoryContents(owner, repo, "website/content/days/$slug/photos")
-            }
+            val photoFiles = api.getDirectoryContents(owner, repo, "website/content/days/$slug/photos")
 
             // Filter for image files and sort naturally (photo-2 before photo-10)
             photoFiles
@@ -338,33 +193,6 @@ class GitHubRepository(
                 .map { PhotoWithCaption(filename = it.name, caption = "") }
         } catch (e: Exception) {
             emptyList()  // No photos directory yet
-        }
-    }
-
-    suspend fun getAmplifyPreviewUrl(prNumber: Int): String? {
-        return try {
-            // Use issue comments endpoint - Amplify bot posts to general comments, not review comments
-            val comments = api.getIssueComments(owner, repo, prNumber)
-            val amplifyComment = comments.find {
-                it.user.login.startsWith("aws-amplify-") ||
-                it.body.contains("amplifyapp.com")
-            }
-            amplifyComment?.body?.let { body ->
-                // Match URLs like https://pr-24.did5czmmf06mc.amplifyapp.com
-                val regex = Regex("""https://[a-z0-9.-]+\.amplifyapp\.com[^\s\)]*""")
-                regex.find(body)?.value
-            }
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-    // Fetch open pull requests created by the app
-    suspend fun getAppCreatedPullRequests(): Result<List<com.alnorth.india2026.api.PullRequest>> = runCatching {
-        val allPRs = api.getPullRequests(owner, repo, state = "open")
-        // Filter PRs created by the app - branches start with "app/"
-        allPRs.filter { pr ->
-            pr.head.ref.startsWith("app/")
         }
     }
 
@@ -515,28 +343,6 @@ class GitHubRepository(
         return photos
     }
 
-    private fun buildPrBody(entry: DayEntry, newPhotoCount: Int): String {
-        return buildString {
-            appendLine("## ${entry.title}")
-            appendLine()
-            appendLine("**Date:** ${entry.date}")
-            appendLine("**Location:** ${entry.location}")
-            appendLine("**Status:** ${entry.status}")
-            appendLine()
-            if (entry.content.isNotEmpty()) {
-                appendLine("### Content Preview")
-                appendLine(entry.content.take(500))
-                if (entry.content.length > 500) appendLine("...")
-                appendLine()
-            }
-            if (newPhotoCount > 0) {
-                appendLine("### New Photos Added: $newPhotoCount")
-                appendLine()
-            }
-            appendLine("---")
-            appendLine("*Submitted via India 2026 Android App*")
-        }
-    }
 }
 
 data class UpdateInfo(
@@ -568,6 +374,5 @@ class PhotoUploadException(
     val failedPhotoIndex: Int,
     val uploadedCount: Int,
     val totalCount: Int,
-    val branchName: String,
     cause: Throwable? = null
 ) : Exception(message, cause)
