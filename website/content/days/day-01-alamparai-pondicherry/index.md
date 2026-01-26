@@ -41,6 +41,8 @@ photos:
     caption: "We got off and walked for this one."
   - file: "photo-18.jpg"
     caption: "A lot of the roads were pretty good."
+  - file: "photo-19.jpg"
+    caption: ""
 ---
 
 Today was our first day of actual riding, and it was a lot smoother than I'd expected!
