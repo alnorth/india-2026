@@ -137,7 +137,9 @@ fun EditDayScreen(
                         slug = state.dayEntry.slug,
                         branchName = branchName,
                         existingPhotos = state.editedExistingPhotos,
-                        onCaptionChanged = viewModel::updateExistingPhotoCaption
+                        onCaptionChanged = viewModel::updateExistingPhotoCaption,
+                        onMoveUp = viewModel::moveExistingPhotoUp,
+                        onMoveDown = viewModel::moveExistingPhotoDown
                     )
 
                     if (state.editedExistingPhotos.isNotEmpty()) {
@@ -465,6 +467,30 @@ class EditDayViewModel : ViewModel() {
                 updatedPhotos[index] = updatedPhotos[index].copy(caption = newCaption)
                 updateEditingState { it.copy(editedExistingPhotos = updatedPhotos) }
             }
+        }
+    }
+
+    fun moveExistingPhotoUp(index: Int) {
+        val current = _uiState.value
+        if (current is EditDayUiState.Editing && index > 0) {
+            val updatedPhotos = current.editedExistingPhotos.toMutableList()
+            // Swap with the photo above
+            val temp = updatedPhotos[index - 1]
+            updatedPhotos[index - 1] = updatedPhotos[index]
+            updatedPhotos[index] = temp
+            updateEditingState { it.copy(editedExistingPhotos = updatedPhotos) }
+        }
+    }
+
+    fun moveExistingPhotoDown(index: Int) {
+        val current = _uiState.value
+        if (current is EditDayUiState.Editing && index < current.editedExistingPhotos.lastIndex) {
+            val updatedPhotos = current.editedExistingPhotos.toMutableList()
+            // Swap with the photo below
+            val temp = updatedPhotos[index + 1]
+            updatedPhotos[index + 1] = updatedPhotos[index]
+            updatedPhotos[index] = temp
+            updateEditingState { it.copy(editedExistingPhotos = updatedPhotos) }
         }
     }
 

@@ -120,17 +120,43 @@ export function getDayBySlug(slug: string): Day | null {
   // Check for photos
   const photosPath = path.join(dayPath, 'photos')
   let photos: string[] = []
+  const metadata = data as DayMetadata
+
   if (fs.existsSync(photosPath)) {
-    photos = fs
+    const filesOnDisk = fs
       .readdirSync(photosPath)
       .filter((file) => /\.(jpg|jpeg|png|gif|webp)$/i.test(file))
-      .sort(naturalSort)
-      .map((file) => `/content/days/${slug}/photos/${file}`)
+
+    // Use frontmatter order as primary, then add any files not in frontmatter
+    if (metadata.photos && metadata.photos.length > 0) {
+      const filesOnDiskSet = new Set(filesOnDisk)
+      const orderedFiles: string[] = []
+
+      // First: add photos in frontmatter order (if they exist on disk)
+      for (const photoMeta of metadata.photos) {
+        if (filesOnDiskSet.has(photoMeta.file)) {
+          orderedFiles.push(photoMeta.file)
+        }
+      }
+
+      // Second: add any remaining files not in frontmatter (natural sorted)
+      const inFrontmatter = new Set(metadata.photos.map((p) => p.file))
+      const remainingFiles = filesOnDisk
+        .filter((f) => !inFrontmatter.has(f))
+        .sort(naturalSort)
+      orderedFiles.push(...remainingFiles)
+
+      photos = orderedFiles.map((file) => `/content/days/${slug}/photos/${file}`)
+    } else {
+      // No frontmatter photos, fall back to natural sort
+      photos = filesOnDisk
+        .sort(naturalSort)
+        .map((file) => `/content/days/${slug}/photos/${file}`)
+    }
   }
 
   // Create photo metadata map from frontmatter
   let photoMetadata: Map<string, PhotoMetadata> | undefined
-  const metadata = data as DayMetadata
   if (metadata.photos && metadata.photos.length > 0) {
     photoMetadata = new Map()
     metadata.photos.forEach((photoMeta) => {

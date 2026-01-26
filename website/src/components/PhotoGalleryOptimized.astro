@@ -31,10 +31,42 @@ if (fs.existsSync(photosDir)) {
   // Ensure optimized directory exists
   fs.mkdirSync(optimizedDir, { recursive: true });
 
-  const photoFiles = fs
+  const filesOnDisk = fs
     .readdirSync(photosDir)
-    .filter((file) => /\.(jpg|jpeg|png|gif|webp)$/i.test(file))
-    .sort(naturalSort);
+    .filter((file) => /\.(jpg|jpeg|png|gif|webp)$/i.test(file));
+
+  // Use frontmatter order as primary, then add any files not in frontmatter
+  let photoFiles: string[];
+  const frontmatterPhotos = dayData?.photoMetadata;
+  if (frontmatterPhotos && frontmatterPhotos.size > 0) {
+    const filesOnDiskSet = new Set(filesOnDisk);
+    const orderedFiles: string[] = [];
+
+    // Get frontmatter order from the raw photos array (Map doesn't preserve insertion order reliably)
+    // We need to use the day's photos array directly for order
+    const rawPhotos = (dayData as any)?.photos as string[] | undefined;
+    if (rawPhotos) {
+      // Extract filenames from paths and use that order
+      for (const photoPath of rawPhotos) {
+        const filename = photoPath.split('/').pop()!;
+        if (filesOnDiskSet.has(filename)) {
+          orderedFiles.push(filename);
+        }
+      }
+    }
+
+    // Add any remaining files not in frontmatter (natural sorted)
+    const inOrder = new Set(orderedFiles);
+    const remainingFiles = filesOnDisk
+      .filter((f) => !inOrder.has(f))
+      .sort(naturalSort);
+    orderedFiles.push(...remainingFiles);
+
+    photoFiles = orderedFiles;
+  } else {
+    // No frontmatter photos, fall back to natural sort
+    photoFiles = filesOnDisk.sort(naturalSort);
+  }
 
   // Process images with Sharp
   for (const filename of photoFiles) {

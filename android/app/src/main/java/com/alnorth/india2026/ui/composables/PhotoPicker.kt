@@ -15,6 +15,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Photo
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -187,6 +189,8 @@ fun ExistingPhotosSection(
     branchName: String?,
     existingPhotos: List<PhotoWithCaption>,
     onCaptionChanged: (Int, String) -> Unit,
+    onMoveUp: ((Int) -> Unit)? = null,
+    onMoveDown: ((Int) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     if (existingPhotos.isEmpty()) return
@@ -211,9 +215,17 @@ fun ExistingPhotosSection(
                     branch = branch,
                     photo = photo,
                     photoNumber = index + 1,
+                    isFirst = index == 0,
+                    isLast = index == existingPhotos.lastIndex,
                     onCaptionChanged = { newCaption ->
                         onCaptionChanged(index, newCaption)
-                    }
+                    },
+                    onMoveUp = if (onMoveUp != null && index > 0) {
+                        { onMoveUp(index) }
+                    } else null,
+                    onMoveDown = if (onMoveDown != null && index < existingPhotos.lastIndex) {
+                        { onMoveDown(index) }
+                    } else null
                 )
             }
         }
@@ -226,7 +238,11 @@ fun ExistingPhotoCard(
     branch: String,
     photo: PhotoWithCaption,
     photoNumber: Int,
-    onCaptionChanged: (String) -> Unit
+    isFirst: Boolean = false,
+    isLast: Boolean = false,
+    onCaptionChanged: (String) -> Unit,
+    onMoveUp: (() -> Unit)? = null,
+    onMoveDown: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     val photoUrl = "https://raw.githubusercontent.com/alnorth/india-2026/$branch/website/content/days/$slug/photos/${photo.filename}"
@@ -252,6 +268,41 @@ fun ExistingPhotoCard(
             modifier = Modifier.padding(8.dp),
             verticalAlignment = Alignment.Top
         ) {
+            // Reorder buttons column
+            Column(
+                modifier = Modifier.padding(end = 4.dp),
+                verticalArrangement = Arrangement.Center
+            ) {
+                IconButton(
+                    onClick = { onMoveUp?.invoke() },
+                    enabled = onMoveUp != null,
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        Icons.Default.KeyboardArrowUp,
+                        contentDescription = "Move up",
+                        tint = if (onMoveUp != null)
+                            MaterialTheme.colorScheme.primary
+                        else
+                            MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                    )
+                }
+                IconButton(
+                    onClick = { onMoveDown?.invoke() },
+                    enabled = onMoveDown != null,
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        Icons.Default.KeyboardArrowDown,
+                        contentDescription = "Move down",
+                        tint = if (onMoveDown != null)
+                            MaterialTheme.colorScheme.primary
+                        else
+                            MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                    )
+                }
+            }
+
             // Photo thumbnail with caching
             Box(
                 modifier = Modifier
