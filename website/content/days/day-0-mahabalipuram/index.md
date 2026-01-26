@@ -65,6 +65,8 @@ photos:
     caption: ""
   - file: "photo-30.jpg"
     caption: ""
+  - file: "photo-31.jpg"
+    caption: "Dillip in his shop."
 ---
 
 We slept reasonably well, mainly thanks to the tiredness from the journey. The hotel breakfast was good, with a mixture of local and western options available.
