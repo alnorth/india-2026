@@ -55,7 +55,7 @@ photos:
   - file: "photo-25.jpg"
     caption: ""
   - file: "photo-26.jpg"
-    caption: ""
+    caption: "The cows wander everywhere here and people just steer around them. They're pretty chilled out, so you just need to make sure you don't run into them."
   - file: "photo-27.jpg"
     caption: "Our dinner: grilled fish with egg fried rice."
   - file: "photo-28.jpg"
