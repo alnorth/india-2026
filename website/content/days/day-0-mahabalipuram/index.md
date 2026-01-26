@@ -58,6 +58,8 @@ photos:
     caption: ""
   - file: "photo-27.jpg"
     caption: "Our dinner: grilled fish with egg fried rice."
+  - file: "photo-28.jpg"
+    caption: "Masala dosa."
 ---
 
 We slept reasonably well, mainly thanks to the tiredness from the journey. The hotel breakfast was good, with a mixture of local and western options available.
