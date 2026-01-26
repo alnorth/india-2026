@@ -45,6 +45,8 @@ photos:
     caption: ""
   - file: "photo-20.jpg"
     caption: "Mahabalipuram high street."
+  - file: "photo-28.jpg"
+    caption: "Masala dosa."
   - file: "photo-21.jpg"
     caption: "Coffee after lunch. The coffee gets poured back and forth from the cup to the bowl in order to cool it down and froth it up."
   - file: "photo-22.jpg"
@@ -59,8 +61,6 @@ photos:
     caption: "The cows wander everywhere here and people just steer around them. They're pretty chilled out, so you just need to make sure you don't run into them."
   - file: "photo-27.jpg"
     caption: "Our dinner: grilled fish with egg fried rice."
-  - file: "photo-28.jpg"
-    caption: "Masala dosa."
 ---
 
 We slept reasonably well, mainly thanks to the tiredness from the journey. The hotel breakfast was good, with a mixture of local and western options available.
