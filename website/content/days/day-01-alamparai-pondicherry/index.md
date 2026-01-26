@@ -35,6 +35,8 @@ photos:
     caption: "Curry for dinner, again 😀"
   - file: "photo-13.jpg"
     caption: ""
+  - file: "photo-16.jpg"
+    caption: ""
 ---
 
 ## Route
