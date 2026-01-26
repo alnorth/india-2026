@@ -1,9 +1,12 @@
 package com.alnorth.india2026.ui.composables
 
+import android.graphics.BitmapFactory
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -12,17 +15,23 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Photo
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.alnorth.india2026.model.PhotoWithCaption
 import com.alnorth.india2026.model.SelectedPhoto
+import com.alnorth.india2026.util.ThumbnailCache
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.io.File
 
 @Composable
 fun PhotoPickerSection(
@@ -219,7 +228,22 @@ fun ExistingPhotoCard(
     photoNumber: Int,
     onCaptionChanged: (String) -> Unit
 ) {
+    val context = LocalContext.current
     val photoUrl = "https://raw.githubusercontent.com/alnorth/india-2026/$branch/website/content/days/$slug/photos/${photo.filename}"
+
+    // Thumbnail loading state
+    var thumbnailFile by remember { mutableStateOf<File?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
+
+    // Load thumbnail asynchronously
+    LaunchedEffect(photoUrl) {
+        isLoading = true
+        val cache = ThumbnailCache(context)
+        thumbnailFile = withContext(Dispatchers.IO) {
+            cache.getThumbnail(photoUrl)
+        }
+        isLoading = false
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth()
@@ -228,20 +252,64 @@ fun ExistingPhotoCard(
             modifier = Modifier.padding(8.dp),
             verticalAlignment = Alignment.Top
         ) {
-            // Photo thumbnail
-            AsyncImage(
-                model = photoUrl,
-                contentDescription = photo.caption,
-                contentScale = ContentScale.Crop,
+            // Photo thumbnail with caching
+            Box(
                 modifier = Modifier
                     .size(80.dp)
                     .clip(RoundedCornerShape(8.dp))
-            )
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                contentAlignment = Alignment.Center
+            ) {
+                when {
+                    isLoading -> {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            strokeWidth = 2.dp
+                        )
+                    }
+                    thumbnailFile != null -> {
+                        val bitmap = remember(thumbnailFile) {
+                            BitmapFactory.decodeFile(thumbnailFile!!.absolutePath)
+                        }
+                        if (bitmap != null) {
+                            Image(
+                                bitmap = bitmap.asImageBitmap(),
+                                contentDescription = photo.caption,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else {
+                            Icon(
+                                Icons.Default.Photo,
+                                contentDescription = "Failed to load",
+                                tint = MaterialTheme.colorScheme.outline
+                            )
+                        }
+                    }
+                    else -> {
+                        Icon(
+                            Icons.Default.Photo,
+                            contentDescription = "Failed to load",
+                            tint = MaterialTheme.colorScheme.outline
+                        )
+                    }
+                }
+            }
 
             Spacer(Modifier.width(12.dp))
 
-            // Caption input (editable)
+            // Photo info and caption input
             Column(modifier = Modifier.weight(1f)) {
+                // Show filename
+                Text(
+                    text = photo.filename,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.outline
+                )
+
+                Spacer(Modifier.height(4.dp))
+
+                // Caption input (editable)
                 OutlinedTextField(
                     value = photo.caption,
                     onValueChange = onCaptionChanged,

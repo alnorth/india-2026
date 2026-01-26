@@ -558,7 +558,7 @@ class EditDayViewModel : ViewModel() {
                             _uiState.value = EditDayUiState.Success(result)
                         }
                         .onFailure { e ->
-                            handleSubmissionFailure(e, branchName)
+                            handleSubmissionFailure(e)
                         }
                 } else {
                     // Create new PR
@@ -580,7 +580,7 @@ class EditDayViewModel : ViewModel() {
                             _uiState.value = EditDayUiState.Success(result)
                         }
                         .onFailure { e ->
-                            handleSubmissionFailure(e, null)
+                            handleSubmissionFailure(e)
                         }
                 }
             } catch (e: Exception) {
@@ -591,7 +591,7 @@ class EditDayViewModel : ViewModel() {
         }
     }
 
-    private fun handleSubmissionFailure(e: Throwable, branchName: String?) {
+    private fun handleSubmissionFailure(e: Throwable) {
         if (e is PhotoUploadException) {
             // Update pending submission with the failed index for retry
             pendingSubmission = pendingSubmission?.copy(
