@@ -3,6 +3,7 @@ date: 2026-01-25
 title: "Day 0: Mahabalipuram"
 location: "Tamil Nadu"
 status: completed
+coordinates: "12.6186752,80.1936908"
 photos:
   - file: "photo-1.jpg"
     caption: "The hotel breakfast."
