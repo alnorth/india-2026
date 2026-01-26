@@ -38,20 +38,6 @@ interface GitHubApi {
         @Query("ref") ref: String
     ): GitHubContent
 
-    @GET("repos/{owner}/{repo}/branches/{branch}")
-    suspend fun getBranch(
-        @Path("owner") owner: String,
-        @Path("repo") repo: String,
-        @Path("branch") branch: String
-    ): BranchResponse
-
-    @POST("repos/{owner}/{repo}/git/refs")
-    suspend fun createBranch(
-        @Path("owner") owner: String,
-        @Path("repo") repo: String,
-        @Body request: CreateBranchRequest
-    ): RefResponse
-
     @PUT("repos/{owner}/{repo}/contents/{path}")
     suspend fun createOrUpdateFile(
         @Path("owner") owner: String,
@@ -59,35 +45,6 @@ interface GitHubApi {
         @Path("path", encoded = true) path: String,
         @Body request: UpdateFileRequest
     ): FileResponse
-
-    @POST("repos/{owner}/{repo}/pulls")
-    suspend fun createPullRequest(
-        @Path("owner") owner: String,
-        @Path("repo") repo: String,
-        @Body request: CreatePullRequestRequest
-    ): PullRequestResponse
-
-    @GET("repos/{owner}/{repo}/pulls/{pull_number}/comments")
-    suspend fun getPullRequestComments(
-        @Path("owner") owner: String,
-        @Path("repo") repo: String,
-        @Path("pull_number") pullNumber: Int
-    ): List<PullRequestComment>
-
-    @GET("repos/{owner}/{repo}/issues/{issue_number}/comments")
-    suspend fun getIssueComments(
-        @Path("owner") owner: String,
-        @Path("repo") repo: String,
-        @Path("issue_number") issueNumber: Int
-    ): List<PullRequestComment>
-
-    @GET("repos/{owner}/{repo}/pulls")
-    suspend fun getPullRequests(
-        @Path("owner") owner: String,
-        @Path("repo") repo: String,
-        @Query("state") state: String = "open",
-        @Query("per_page") perPage: Int = 100
-    ): List<PullRequest>
 
     @GET("repos/{owner}/{repo}/releases")
     suspend fun getReleases(

@@ -54,9 +54,8 @@ data class DaySummary(
 )
 
 data class SubmissionResult(
-    val prNumber: Int,
-    val prUrl: String,
-    val branchName: String
+    val commitSha: String,
+    val dayTitle: String
 )
 
 // Represents a photo selected from gallery with its caption

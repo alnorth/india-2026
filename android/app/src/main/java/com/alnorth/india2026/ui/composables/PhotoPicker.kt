@@ -186,7 +186,6 @@ fun PhotoWithCaptionCard(
 @Composable
 fun ExistingPhotosSection(
     slug: String,
-    branchName: String?,
     existingPhotos: List<PhotoWithCaption>,
     onCaptionChanged: (Int, String) -> Unit,
     onMoveUp: ((Int) -> Unit)? = null,
@@ -194,8 +193,6 @@ fun ExistingPhotosSection(
     modifier: Modifier = Modifier
 ) {
     if (existingPhotos.isEmpty()) return
-
-    val branch = branchName ?: "master"
 
     Column(modifier = modifier) {
         Text(
@@ -212,7 +209,6 @@ fun ExistingPhotosSection(
             itemsIndexed(existingPhotos) { index, photo ->
                 ExistingPhotoCard(
                     slug = slug,
-                    branch = branch,
                     photo = photo,
                     photoNumber = index + 1,
                     isFirst = index == 0,
@@ -235,7 +231,6 @@ fun ExistingPhotosSection(
 @Composable
 fun ExistingPhotoCard(
     slug: String,
-    branch: String,
     photo: PhotoWithCaption,
     photoNumber: Int,
     isFirst: Boolean = false,
@@ -245,7 +240,7 @@ fun ExistingPhotoCard(
     onMoveDown: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
-    val photoUrl = "https://raw.githubusercontent.com/alnorth/india-2026/$branch/website/content/days/$slug/photos/${photo.filename}"
+    val photoUrl = "https://raw.githubusercontent.com/alnorth/india-2026/master/website/content/days/$slug/photos/${photo.filename}"
 
     // Thumbnail loading state
     var thumbnailFile by remember { mutableStateOf<File?>(null) }

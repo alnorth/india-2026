@@ -36,7 +36,6 @@ import kotlinx.coroutines.launch
 @Composable
 fun EditDayScreen(
     slug: String,
-    branchName: String? = null,
     initialSharedPhotos: List<Uri> = emptyList(),
     viewModel: EditDayViewModel = viewModel(),
     onNavigateBack: () -> Unit,
@@ -45,8 +44,8 @@ fun EditDayScreen(
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
-    LaunchedEffect(slug, branchName) {
-        viewModel.loadDay(slug, branchName, initialSharedPhotos)
+    LaunchedEffect(slug) {
+        viewModel.loadDay(slug, initialSharedPhotos)
     }
 
     Scaffold(
@@ -134,10 +133,9 @@ fun EditDayScreen(
 
                     Divider()
 
-                    // Existing photos (from PR branch)
+                    // Existing photos
                     ExistingPhotosSection(
                         slug = state.dayEntry.slug,
-                        branchName = branchName,
                         existingPhotos = state.editedExistingPhotos,
                         onCaptionChanged = viewModel::updateExistingPhotoCaption,
                         onMoveUp = viewModel::moveExistingPhotoUp,
@@ -163,7 +161,7 @@ fun EditDayScreen(
                         modifier = Modifier.fillMaxWidth(),
                         enabled = state.hasChanges
                     ) {
-                        Text(if (branchName != null) "Commit Changes" else "Create Pull Request")
+                        Text("Save Changes")
                     }
 
                     if (!state.hasChanges) {
@@ -262,7 +260,7 @@ fun EditDayScreen(
                             OutlinedButton(onClick = onNavigateBack) {
                                 Text("Go Back")
                             }
-                            Button(onClick = { viewModel.loadDay(slug, branchName) }) {
+                            Button(onClick = { viewModel.loadDay(slug) }) {
                                 Text("Try Again")
                             }
                         }
@@ -390,7 +388,6 @@ class EditDayViewModel : ViewModel() {
     val uiState: StateFlow<EditDayUiState> = _uiState.asStateFlow()
 
     private var originalEntry: DayEntry? = null
-    private var existingBranchName: String? = null
 
     // State for retry functionality
     private var pendingSubmission: PendingSubmission? = null
@@ -398,12 +395,10 @@ class EditDayViewModel : ViewModel() {
     private data class PendingSubmission(
         val updatedEntry: DayEntry,
         val newPhotos: List<SelectedPhoto>,
-        val branchName: String?,
         val startFromIndex: Int = 0
     )
 
-    fun loadDay(slug: String, branchName: String? = null, initialSharedPhotos: List<Uri> = emptyList()) {
-        existingBranchName = branchName
+    fun loadDay(slug: String, initialSharedPhotos: List<Uri> = emptyList()) {
         viewModelScope.launch {
             _uiState.value = EditDayUiState.Loading
 
@@ -424,7 +419,7 @@ class EditDayViewModel : ViewModel() {
                     SelectedPhoto(uri = uri, caption = "")
                 }
 
-                repository.getDayBySlug(slug, branchName)
+                repository.getDayBySlug(slug)
                     .onSuccess { entry ->
                         originalEntry = entry
                         _uiState.value = EditDayUiState.Editing(
@@ -531,11 +526,10 @@ class EditDayViewModel : ViewModel() {
         pendingSubmission = PendingSubmission(
             updatedEntry = updatedEntry,
             newPhotos = current.newPhotos,
-            branchName = existingBranchName,
             startFromIndex = 0
         )
 
-        executeSubmission(context, updatedEntry, current.newPhotos, existingBranchName, 0)
+        executeSubmission(context, updatedEntry, current.newPhotos, 0)
     }
 
     fun retryUpload(context: Context) {
@@ -544,7 +538,6 @@ class EditDayViewModel : ViewModel() {
             context,
             pending.updatedEntry,
             pending.newPhotos,
-            pending.branchName,
             pending.startFromIndex
         )
     }
@@ -553,7 +546,6 @@ class EditDayViewModel : ViewModel() {
         context: Context,
         updatedEntry: DayEntry,
         newPhotos: List<SelectedPhoto>,
-        branchName: String?,
         startFromIndex: Int
     ) {
         viewModelScope.launch {
@@ -570,52 +562,26 @@ class EditDayViewModel : ViewModel() {
                     )
                 }
 
-                if (branchName != null) {
-                    // Commit to existing PR branch
-                    _uiState.value = EditDayUiState.Submitting(
-                        "Uploading photos...",
-                        currentPhoto = startFromIndex,
-                        totalPhotos = newPhotos.size
-                    )
+                _uiState.value = EditDayUiState.Submitting(
+                    "Saving to master...",
+                    currentPhoto = startFromIndex,
+                    totalPhotos = newPhotos.size
+                )
 
-                    repository.commitToExistingBranch(
-                        branchName,
-                        updatedEntry,
-                        newPhotos,
-                        context,
-                        onProgress = progressCallback,
-                        startFromIndex = startFromIndex
-                    )
-                        .onSuccess { result ->
-                            pendingSubmission = null
-                            _uiState.value = EditDayUiState.Success(result)
-                        }
-                        .onFailure { e ->
-                            handleSubmissionFailure(e)
-                        }
-                } else {
-                    // Create new PR
-                    _uiState.value = EditDayUiState.Submitting(
-                        "Creating branch...",
-                        currentPhoto = startFromIndex,
-                        totalPhotos = newPhotos.size
-                    )
-
-                    repository.updateDayEntry(
-                        updatedEntry,
-                        newPhotos,
-                        context,
-                        onProgress = progressCallback,
-                        startFromIndex = startFromIndex
-                    )
-                        .onSuccess { result ->
-                            pendingSubmission = null
-                            _uiState.value = EditDayUiState.Success(result)
-                        }
-                        .onFailure { e ->
-                            handleSubmissionFailure(e)
-                        }
-                }
+                repository.updateDayEntry(
+                    updatedEntry,
+                    newPhotos,
+                    context,
+                    onProgress = progressCallback,
+                    startFromIndex = startFromIndex
+                )
+                    .onSuccess { result ->
+                        pendingSubmission = null
+                        _uiState.value = EditDayUiState.Success(result)
+                    }
+                    .onFailure { e ->
+                        handleSubmissionFailure(e)
+                    }
             } catch (e: Exception) {
                 _uiState.value = EditDayUiState.Error(
                     "Error: ${e.message ?: "Unknown error occurred"}"
@@ -628,16 +594,14 @@ class EditDayViewModel : ViewModel() {
         if (e is PhotoUploadException) {
             // Update pending submission with the failed index for retry
             pendingSubmission = pendingSubmission?.copy(
-                startFromIndex = e.failedPhotoIndex,
-                branchName = e.branchName
+                startFromIndex = e.failedPhotoIndex
             )
 
             _uiState.value = EditDayUiState.UploadError(
                 message = e.message ?: "Photo upload failed",
                 failedPhotoIndex = e.failedPhotoIndex,
                 uploadedCount = e.uploadedCount,
-                totalCount = e.totalCount,
-                branchName = e.branchName
+                totalCount = e.totalCount
             )
         } else {
             _uiState.value = EditDayUiState.Error(
@@ -671,7 +635,6 @@ sealed class EditDayUiState {
         val message: String,
         val failedPhotoIndex: Int,
         val uploadedCount: Int,
-        val totalCount: Int,
-        val branchName: String?
+        val totalCount: Int
     ) : EditDayUiState()
 }
