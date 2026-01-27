@@ -23,6 +23,8 @@ photos:
     caption: ""
   - file: "photo-9.jpg"
     caption: ""
+  - file: "photo-10.jpg"
+    caption: ""
 ---
 
 ## Route
