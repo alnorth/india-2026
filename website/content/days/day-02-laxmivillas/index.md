@@ -1,6 +1,6 @@
 ---
 date: 2026-01-27
-title: "Day 2: Laxmi Villas"
+title: "Day 2: Pondicherry to Lakshmi Villas"
 location: "Tamil Nadu"
 status: completed
 stravaId: "17191022459"
@@ -23,4 +23,4 @@ photos:
 
 ## Route
 
-Coast to Coast Day 2: Laxmi Villas.
+Coast to Coast Day 2: Pondicherry to Lakshmi Villas.
