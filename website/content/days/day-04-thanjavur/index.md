@@ -15,6 +15,20 @@ photos:
     caption: ""
   - file: "photo-5.jpg"
     caption: ""
+  - file: "photo-6.jpg"
+    caption: ""
+  - file: "photo-7.jpg"
+    caption: ""
+  - file: "photo-8.jpg"
+    caption: ""
+  - file: "photo-9.jpg"
+    caption: ""
+  - file: "photo-10.jpg"
+    caption: ""
+  - file: "photo-11.jpg"
+    caption: ""
+  - file: "photo-12.jpg"
+    caption: ""
 ---
 
 ## Route
