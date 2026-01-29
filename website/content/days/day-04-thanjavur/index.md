@@ -49,6 +49,8 @@ photos:
     caption: ""
   - file: "photo-22.jpg"
     caption: ""
+  - file: "photo-23.jpg"
+    caption: ""
 ---
 
 Another shorter day in the saddle today. Initially the route took us through busy towns, before transitioning to quieter and more pleasant country roads. Traffic got busier again as we headed into Thanjavur. A very pleasant ride overall, especially the sections alongside the Kollidam River approaching Thanjavur.
