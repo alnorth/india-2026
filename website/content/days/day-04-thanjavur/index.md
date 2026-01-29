@@ -47,6 +47,6 @@ photos:
     caption: ""
 ---
 
-Another shorter day in the saddle today. Initially the route took us through busy towns, before transitioning to quieter and more pleasant country roads. Traffic got busier again as we headed into Thanjavur. A very pleasant ride overall.
+Another shorter day in the saddle today. Initially the route took us through busy towns, before transitioning to quieter and more pleasant country roads. Traffic got busier again as we headed into Thanjavur. A very pleasant ride overall, especially the sections alongside the Kollidam River approaching Thanjavur.
 
 After showering and finding some lunch we took a look round another Chola temple, the [Brihadiswara temple](https://asitrichycircle.in/monuments/whm/brihadiswara-temple-thanjavur/) here in Thanjavur. Another very impressive structure from the 11th century, surrounded by a large walled courtyard and several smaller temples.
