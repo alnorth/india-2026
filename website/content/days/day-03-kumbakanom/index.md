@@ -58,3 +58,5 @@ We had an onion dosa as a mid-morning snack just outside the temple and then hea
 A shorter day in the saddle today. The first half of the route had taken us on small but congested roads, busy main roads and the hard shoulders of highways, which wasn't all that fun. As the planned route for the day included more of the same we decided to tweak it slightly and work in more backroads. This worked well, and resulted in some more pleasurable riding.
 
 Our hotel for this evening is much more luxurious than any we've had so far. Each room is in its own little chalet, and the whole compound is very well kept and peaceful. I took the opportunity to have an auryvidic massage and steam bath in the hotel's massage centre. Very relaxing for my tired muscles!
+
+Thankfully I'm almost back to normal now, and recovered from whatever it was that was making me feel ill.
