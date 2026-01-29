@@ -47,6 +47,8 @@ photos:
     caption: ""
   - file: "photo-21.jpg"
     caption: ""
+  - file: "photo-22.jpg"
+    caption: ""
 ---
 
 ## Route
