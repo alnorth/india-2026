@@ -29,6 +29,22 @@ photos:
     caption: ""
   - file: "photo-12.jpg"
     caption: ""
+  - file: "photo-13.jpg"
+    caption: ""
+  - file: "photo-14.jpg"
+    caption: ""
+  - file: "photo-15.jpg"
+    caption: ""
+  - file: "photo-16.jpg"
+    caption: ""
+  - file: "photo-17.jpg"
+    caption: ""
+  - file: "photo-18.jpg"
+    caption: ""
+  - file: "photo-19.jpg"
+    caption: ""
+  - file: "photo-20.jpg"
+    caption: ""
 ---
 
 ## Route
