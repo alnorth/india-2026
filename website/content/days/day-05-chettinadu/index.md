@@ -37,6 +37,10 @@ photos:
     caption: ""
   - file: "photo-16.jpg"
     caption: ""
+  - file: "photo-17.jpg"
+    caption: ""
+  - file: "photo-18.jpg"
+    caption: ""
 ---
 
 
