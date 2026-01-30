@@ -47,6 +47,8 @@ photos:
     caption: ""
   - file: "photo-21.jpg"
     caption: ""
+  - file: "photo-22.jpg"
+    caption: ""
 ---
 
 A lovely day of cycling today. We'd expected the ride out of Thanjavur to be very busy, but it was quieter than expected. There was still plenty of traffic, just not enough to slow us down much. We had a nice chat with a guy called Joshua who cycled alongside us for a few miles on the way out of town. He's the only Indian we've talked to so far who cycles for pleasure. He said it was pretty rare, but that he was in a cycling club with a good number of others. As the nearest good bike shop is in Chennai he rides a single speed bike to keep things simple. It's flat enough here for that to work well.
