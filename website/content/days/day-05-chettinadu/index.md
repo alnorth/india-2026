@@ -2,10 +2,41 @@
 date: 2026-01-30
 title: "Day 5: Chettinadu"
 location: "Tamil Nadu"
-status: planned
-stravaId: ""
+status: completed
+stravaId: "17224801101"
+photos:
+  - file: "photo-1.jpg"
+    caption: ""
+  - file: "photo-2.jpg"
+    caption: ""
+  - file: "photo-3.jpg"
+    caption: ""
+  - file: "photo-4.jpg"
+    caption: ""
+  - file: "photo-5.jpg"
+    caption: ""
+  - file: "photo-6.jpg"
+    caption: ""
+  - file: "photo-7.jpg"
+    caption: ""
+  - file: "photo-8.jpg"
+    caption: ""
+  - file: "photo-9.jpg"
+    caption: ""
+  - file: "photo-10.jpg"
+    caption: ""
+  - file: "photo-11.jpg"
+    caption: ""
+  - file: "photo-12.jpg"
+    caption: ""
+  - file: "photo-13.jpg"
+    caption: ""
+  - file: "photo-14.jpg"
+    caption: ""
+  - file: "photo-15.jpg"
+    caption: ""
+  - file: "photo-16.jpg"
+    caption: ""
 ---
 
-## Route
 
-Coast to Coast Day 5: Chettinadu.
