@@ -43,4 +43,8 @@ photos:
     caption: ""
 ---
 
+A lovely day of cycling today. We'd expected the ride out of Thanjavur to be very busy, but it was quieter than expected. There was still plenty of traffic, just not enough to slow us down much. We had a nice chat with a guy called Joshua who cycled alongside us for a few miles on the way out of town. He's the only Indian we've talked to so far who cycles for pleasure. He said it was pretty rare, but that he was in a cycling club with a good number of others. As the nearest good bike shop is in Chennai he rides a single speed bike to keep things simple. It's flat enough here for that to work well.
 
+Apart from the first ten miles out of Thanjavur, much of today's ride was on quieter roads and through some quite beautiful scenery. A lot of the riding we've done so far has been on roads either lined by buildings or trees, but today things opened out a bit and we had some gorgeous views across large paddy fields and areas of wetland.
+
+Weve arrived in Chettinadu now, and one of the features of the area is the large number of abandoned mansion houses. These were build a hundred or so years ago, but then left to deteriorate when the owners emigrated.
