@@ -37,6 +37,8 @@ photos:
     caption: "The view from the rooftop restaurant at our hotel."
   - file: "photo-16.jpg"
     caption: ""
+  - file: "photo-17.jpg"
+    caption: ""
 ---
 
 Another great day in terms of scenery today. Lots of open countryside, and our first glimpses of hills and rocky outcrops.
