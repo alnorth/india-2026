@@ -32,6 +32,10 @@ photos:
     caption: ""
   - file: "photo-14.jpg"
     caption: ""
+  - file: "photo-15.jpg"
+    caption: ""
+  - file: "photo-16.jpg"
+    caption: ""
 ---
 
 Another great day in terms of scenery today. Lots of open countryside, and our first glimpses of hills and rocky outcrops.
