@@ -6,9 +6,9 @@ status: completed
 stravaId: "17246060742"
 photos:
   - file: "photo-1.jpg"
-    caption: ""
+    caption: "The view over the roofs of Madurai from our hotel restaurant."
   - file: "photo-2.jpg"
-    caption: ""
+    caption: "Our hotel breakfast."
   - file: "photo-3.jpg"
     caption: ""
   - file: "photo-11.jpg"
