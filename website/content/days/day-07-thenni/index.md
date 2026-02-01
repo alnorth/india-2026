@@ -21,6 +21,8 @@ photos:
     caption: ""
   - file: "photo-5.jpg"
     caption: ""
+  - file: "photo-9.jpg"
+    caption: ""
 ---
 
 An enjoyable ride today. We left Madurai relatively early before the traffic started to build, but the roads were still pretty busy and there were a few times where we ended up squeezing through some tight gaps between other vehicles.
