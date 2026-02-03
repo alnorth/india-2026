@@ -3,6 +3,7 @@ date: 2026-02-02
 title: "Day 8: Kumily"
 location: "Kerala"
 status: completed
+stravaId: "17258685073"
 photos:
   - file: "photo-1.jpg"
     caption: ""
