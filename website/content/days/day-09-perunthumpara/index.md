@@ -3,6 +3,7 @@ date: 2026-02-03
 title: "Day 9: Perunthumpara"
 location: "Kerala"
 status: completed
+stravaId: "17269450671"
 photos:
   - file: "photo-1.jpg"
     caption: ""
@@ -31,7 +32,7 @@ photos:
   - file: "photo-13.jpg"
     caption: ""
   - file: "photo-14.jpg"
-    caption: ""
+    caption: "The view from the viewpoint on my walk."
   - file: "photo-15.jpg"
     caption: ""
 ---
