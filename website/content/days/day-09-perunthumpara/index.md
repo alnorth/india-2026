@@ -39,6 +39,8 @@ photos:
     caption: ""
   - file: "photo-17.jpg"
     caption: ""
+  - file: "photo-18.jpg"
+    caption: ""
 ---
 
 Another great day in terms of scenery, and another hard day of climbing on the bikes. It felt like the longest 30 mile bike ride I've ever done!
