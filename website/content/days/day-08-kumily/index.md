@@ -17,6 +17,8 @@ photos:
     caption: ""
   - file: "photo-6.jpg"
     caption: ""
+  - file: "photo-7.jpg"
+    caption: ""
 ---
 
 Another good day, with great scenery, but a hard day.
