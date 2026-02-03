@@ -201,3 +201,25 @@ export function getAllSlugs(): string[] {
       return fs.statSync(dayPath).isDirectory()
     })
 }
+
+export interface AdjacentDays {
+  previous: { slug: string; title: string } | null
+  next: { slug: string; title: string } | null
+}
+
+export function getAdjacentDays(slug: string): AdjacentDays {
+  const allDays = getAllDays()
+  const currentIndex = allDays.findIndex((day) => day.slug === slug)
+
+  if (currentIndex === -1) {
+    return { previous: null, next: null }
+  }
+
+  const previousDay = currentIndex > 0 ? allDays[currentIndex - 1] : null
+  const nextDay = currentIndex < allDays.length - 1 ? allDays[currentIndex + 1] : null
+
+  return {
+    previous: previousDay ? { slug: previousDay.slug, title: previousDay.title } : null,
+    next: nextDay ? { slug: nextDay.slug, title: nextDay.title } : null,
+  }
+}

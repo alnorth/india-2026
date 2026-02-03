@@ -1,6 +1,6 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import { getAllSlugs, getDayBySlug } from '@/lib/days';
+import { getAllSlugs, getDayBySlug, getAdjacentDays } from '@/lib/days';
 import { format } from 'date-fns';
 import GPXMap from '@/components/GPXMap';
 import ElevationProfile from '@/components/ElevationProfile';
@@ -21,6 +21,8 @@ const day = getDayBySlug(slug);
 if (!day) {
   return Astro.redirect('/404');
 }
+
+const { previous, next } = getAdjacentDays(slug);
 ---
 
 <BaseLayout title={`${day.title} - India 2026`}>
@@ -145,6 +147,33 @@ if (!day) {
           <h2 class="text-2xl font-bold mb-4">Photos</h2>
           <PhotoGalleryOptimized slug={slug} />
         </section>
+      )}
+
+      {(previous || next) && (
+        <nav class="mt-12 pt-8 border-t border-sand-200 dark:border-earth-700">
+          <div class="flex justify-between items-start gap-4">
+            {previous ? (
+              <a href={`/day/${previous.slug}`} class="group flex-1">
+                <span class="text-sm text-sand-500 dark:text-sand-400">← Previous</span>
+                <div class="text-teal-600 dark:text-teal-400 group-hover:underline font-medium">
+                  {previous.title}
+                </div>
+              </a>
+            ) : (
+              <div class="flex-1"></div>
+            )}
+            {next ? (
+              <a href={`/day/${next.slug}`} class="group flex-1 text-right">
+                <span class="text-sm text-sand-500 dark:text-sand-400">Next →</span>
+                <div class="text-teal-600 dark:text-teal-400 group-hover:underline font-medium">
+                  {next.title}
+                </div>
+              </a>
+            ) : (
+              <div class="flex-1"></div>
+            )}
+          </div>
+        </nav>
       )}
     </article>
   </div>
