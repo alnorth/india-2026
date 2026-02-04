@@ -66,7 +66,7 @@ The Android app reads and writes markdown files with YAML frontmatter. When modi
 | date | string | Yes | `DayMetadata` in `website/src/lib/days.ts` | `DayEntry` in `android/.../model/DayEntry.kt` |
 | title | string | Yes | `DayMetadata` | `DayEntry` |
 | location | string | No | `DayMetadata` | `DayEntry` |
-| status | string | Yes | `DayMetadata` (`'planned' \| 'in-progress' \| 'completed'`) | `DayEntry` |
+| status | string | Yes | `DayMetadata` (`'planned' \| 'in-progress' \| 'completed' \| 'cancelled'`) | `DayEntry` |
 | stravaId | string | No | `DayMetadata` | `DayEntry` |
 | coordinates | string | No | `DayMetadata` (format: `"lat,lng"`) | `DayEntry` |
 | photos | array | No | `PhotoMetadata[]` | `List<PhotoWithCaption>` |

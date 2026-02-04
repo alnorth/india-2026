@@ -43,6 +43,7 @@ const { previous, next } = getAdjacentDays(slug);
         <span class={`inline-block mt-2 px-3 py-1 text-sm rounded ${
           day.status === 'completed' ? 'bg-forest-100 text-forest-800' :
           day.status === 'in-progress' ? 'bg-saffron-100 text-saffron-800' :
+          day.status === 'cancelled' ? 'bg-terracotta-100 text-terracotta-800' :
           'bg-sand-200 text-sand-800'
         }`}>
           {day.status}

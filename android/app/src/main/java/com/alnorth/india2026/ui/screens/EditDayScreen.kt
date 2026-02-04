@@ -350,7 +350,7 @@ fun StatusDropdown(
     onStatusSelected: (String) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
-    val options = listOf("planned", "in-progress", "completed")
+    val options = listOf("planned", "in-progress", "completed", "cancelled")
 
     ExposedDropdownMenuBox(
         expanded = expanded,
