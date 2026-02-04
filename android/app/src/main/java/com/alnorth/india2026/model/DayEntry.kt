@@ -13,7 +13,7 @@ data class DayEntry(
     val date: String,           // YYYY-MM-DD (read-only, from existing file)
     val title: String,          // Read-only, from existing file
     val location: String,       // Read-only, from existing file
-    val status: String,         // Editable: planned, in-progress, completed
+    val status: String,         // Editable: planned, in-progress, completed, cancelled
     val stravaId: String?,      // Editable: Strava activity ID
     val coordinates: String?,   // Optional: "lat,lng" format for days without GPX
     val content: String,        // Editable: markdown content

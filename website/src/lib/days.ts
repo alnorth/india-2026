@@ -42,7 +42,7 @@ export interface DayMetadata {
   date: string
   title: string
   location?: string
-  status: 'planned' | 'in-progress' | 'completed'
+  status: 'planned' | 'in-progress' | 'completed' | 'cancelled'
   stravaId?: string
   coordinates?: string // Format: "lat,lng" e.g. "12.6269,80.1927"
   photos?: PhotoMetadata[]

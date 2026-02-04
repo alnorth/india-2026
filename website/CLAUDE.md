@@ -189,7 +189,7 @@ interface DayMetadata {
   date: string           // YYYY-MM-DD format
   title: string          // e.g., "Day 1: Kanyakumari to Nagercoil"
   location?: string      // e.g., "Tamil Nadu"
-  status: 'planned' | 'in-progress' | 'completed'
+  status: 'planned' | 'in-progress' | 'completed' | 'cancelled'
   stravaId?: string      // Strava activity ID
   photos?: PhotoMetadata[] // optional photo metadata (captions, alt text)
 }

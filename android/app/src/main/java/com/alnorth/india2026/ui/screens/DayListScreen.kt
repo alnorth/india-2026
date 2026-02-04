@@ -172,6 +172,7 @@ fun StatusBadge(status: String) {
     val (color, text) = when (status) {
         "completed" -> MaterialTheme.colorScheme.primary to "Done"
         "in-progress" -> MaterialTheme.colorScheme.tertiary to "Today"
+        "cancelled" -> MaterialTheme.colorScheme.error to "Cancelled"
         else -> MaterialTheme.colorScheme.outline to "Planned"
     }
     Surface(

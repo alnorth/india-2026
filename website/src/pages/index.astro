@@ -115,6 +115,7 @@ for (const day of days) {
               <span class={`px-2 py-1 text-xs rounded flex-shrink-0 ml-2 ${
                 day.status === 'completed' ? 'bg-forest-100 text-forest-800' :
                 day.status === 'in-progress' ? 'bg-saffron-100 text-saffron-800' :
+                day.status === 'cancelled' ? 'bg-terracotta-100 text-terracotta-800' :
                 'bg-sand-200 text-sand-800'
               }`}>
                 {day.status}
