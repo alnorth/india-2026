@@ -41,6 +41,8 @@ photos:
     caption: ""
   - file: "photo-18.jpg"
     caption: ""
+  - file: "photo-19.jpg"
+    caption: ""
 ---
 
 I was back on the bike again today (thanks to some immodium) for a great, but very hot, day of cycling.
