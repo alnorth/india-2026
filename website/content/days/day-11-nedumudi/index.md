@@ -25,6 +25,20 @@ photos:
     caption: ""
   - file: "photo-10.jpg"
     caption: ""
+  - file: "photo-11.jpg"
+    caption: ""
+  - file: "photo-12.jpg"
+    caption: ""
+  - file: "photo-13.jpg"
+    caption: ""
+  - file: "photo-14.jpg"
+    caption: ""
+  - file: "photo-15.jpg"
+    caption: ""
+  - file: "photo-16.jpg"
+    caption: ""
+  - file: "photo-17.jpg"
+    caption: ""
 ---
 
 I was back on the bike again today (thanks to some immodium) for a great, but very hot, day of cycling.
