@@ -3,6 +3,7 @@ date: 2026-02-06
 title: "Day 12: Marari Beach"
 location: "Kerala"
 status: completed
+stravaId: "17302652043"
 ---
 
 A very short day in the saddle today, with only 16 miles from start to finish, and not a hill to be seen.
