@@ -27,6 +27,8 @@ photos:
     caption: ""
   - file: "photo-11.jpg"
     caption: ""
+  - file: "photo-12.jpg"
+    caption: ""
 ---
 
 A very short day in the saddle today, with only 16 miles from start to finish, and not a hill to be seen.
