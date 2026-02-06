@@ -5,6 +5,8 @@ location: "Kerala"
 status: completed
 stravaId: "17302652043"
 photos:
+  - file: "photo-14.jpg"
+    caption: ""
   - file: "photo-12.jpg"
     caption: ""
   - file: "photo-1.jpg"
@@ -30,8 +32,6 @@ photos:
   - file: "photo-9.jpg"
     caption: ""
   - file: "photo-10.jpg"
-    caption: ""
-  - file: "photo-14.jpg"
     caption: ""
 ---
 
