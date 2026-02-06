@@ -4,6 +4,27 @@ title: "Day 12: Marari Beach"
 location: "Kerala"
 status: completed
 stravaId: "17302652043"
+photos:
+  - file: "photo-1.jpg"
+    caption: ""
+  - file: "photo-2.jpg"
+    caption: ""
+  - file: "photo-3.jpg"
+    caption: ""
+  - file: "photo-4.jpg"
+    caption: ""
+  - file: "photo-5.jpg"
+    caption: ""
+  - file: "photo-6.jpg"
+    caption: ""
+  - file: "photo-7.jpg"
+    caption: ""
+  - file: "photo-8.jpg"
+    caption: ""
+  - file: "photo-9.jpg"
+    caption: ""
+  - file: "photo-10.jpg"
+    caption: ""
 ---
 
 A very short day in the saddle today, with only 16 miles from start to finish, and not a hill to be seen.
