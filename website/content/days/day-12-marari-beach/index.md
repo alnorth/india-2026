@@ -47,4 +47,4 @@ The beach here is beautiful, and a great place to spend some time when it's so h
 
 Our dinner was a prawn and mango curry on the beach after sunset.
 
-We just have one more day of cycling left, and again it should be pretty easy. It's just 30 miles up the coast to Fort Kochin and then we'll be done!
+We just have one more day of cycling left, and again it should be pretty easy. It's just 30 miles up the coast to Fort Cochin and then we'll be done!
